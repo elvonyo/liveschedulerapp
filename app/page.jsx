@@ -175,7 +175,7 @@ const SEED_SIGNUPS = [
 
 // font-size kept at base (16px equiv) to prevent iOS auto-zoom on focus
 const inputCls = "w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-400";
-const inputStyle = { fontSize:"16px", minWidth:0, width:"100%", boxSizing:"border-box" as const };
+const inputStyle = { fontSize:"16px", minWidth:0, width:"100%", boxSizing:"border-box" };
 const labelCls = "text-white/70 text-xs font-semibold block mb-1";
 // Fully inline versions used wherever Tailwind is unreliable
 const IS = {
