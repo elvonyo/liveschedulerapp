@@ -78,7 +78,8 @@ function isLiveRightNow(schedule) {
   return nowMins >= sh * 60 + sm && nowMins < eh * 60 + em;
 }
 
-function effectiveStatus(schedule) {
+function effectiveStatus(schedule, occurrenceId = null) {
+  if (occurrenceId && schedule.cancelledOccurrenceIds?.includes(occurrenceId)) return STATUS.CANCELLED;
   if (schedule.manualStatus === STATUS.CANCELLED) return STATUS.CANCELLED;
   if (schedule.manualStatus === STATUS.LIVE_NOW)  return STATUS.LIVE_NOW;
   if (schedule.manualStatus === STATUS.COMPLETED) return STATUS.COMPLETED;
@@ -232,75 +233,92 @@ function SupporterRow({ signup }) {
 
 // ─── Auth Screen ───────────────────────────────────────────────────────────────
 
-function AuthScreen({ users, onLogin, onRegister }) {
-  const [tab,      setTab]      = useState("login");
+function AuthScreen({ onLogin, onRegister }) {
+  const [tab, setTab] = useState("login");
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error,    setError]    = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
-    // [DB INTEGRATION] Supabase: auth.signInWithPassword({ email, password })
-    const u = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase() && u.password === password);
-    if (!u) { setError("Username or password is incorrect."); return; }
-    setError(""); onLogin(u);
+  async function submit() {
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Email and password are required.");
+      return;
+    }
+
+    if (tab === "register" && !username.trim()) {
+      setError("Username is required.");
+      return;
+    }
+
+    setLoading(true);
+
+    const result = tab === "login"
+      ? await onLogin({ email: email.trim(), password })
+      : await onRegister({ email: email.trim(), username: username.trim(), password });
+
+    if (result?.error) setError(result.error);
+
+    setLoading(false);
   }
-
-  function handleRegister() {
-    if (!username.trim() || !password.trim()) { setError("Username and password are required."); return; }
-    if (users.find(u => u.username.toLowerCase() === username.trim().toLowerCase())) { setError("That username is taken."); return; }
-    // [DB INTEGRATION] supabase.auth.signUp({ email, password }) then insert into profiles table
-    const newUser = { id:uid(), username:username.trim(), password, communityIds: [] };
-    setError(""); onRegister(newUser);
-  }
-
-  const submit = tab === "login" ? handleLogin : handleRegister;
 
   return (
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",width:"100%",boxSizing:"border-box"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"#0a0c18"}}>
       <div style={{width:"100%",maxWidth:"420px"}}>
-        <div style={{textAlign:"center",marginBottom:"32px"}}>
-          <p style={{fontSize:"48px",marginBottom:"12px"}}>📡</p>
-          <h1 style={{color:"#fff",fontWeight:900,fontSize:"24px",margin:0}}>LiveSupport <span style={{color:"#fbbf24"}}>Scheduler</span></h1>
-          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",marginTop:"6px"}}>Sign in or create an account</p>
-        </div>
-        <div style={{display:"flex",background:"rgba(255,255,255,0.1)",borderRadius:"12px",padding:"4px",marginBottom:"20px"}}>
-          {[["login","Sign In"],["register","Create Account"]].map(([t,label]) => (
-            <button key={t} onClick={() => { setTab(t); setError(""); }}
-              style={{flex:1,padding:"10px 0",borderRadius:"9px",fontSize:"14px",fontWeight:700,border:"none",cursor:"pointer",
-                background:tab===t?"#fbbf24":"transparent",color:tab===t?"#1c1400":"rgba(255,255,255,0.6)"}}>
-              {label}
-            </button>
-          ))}
-        </div>
-        <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"24px",display:"flex",flexDirection:"column",gap:"16px"}}>
-          {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
-          <div>
-            <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Username</label>
-            <input value={username} onChange={e=>setUsername(e.target.value)} placeholder="your_username"
-              style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box"}}
-              onKeyDown={e=>e.key==="Enter"&&submit()} />
-          </div>
-          <div>
-            <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Password</label>
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"
-              style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box"}}
-              onKeyDown={e=>e.key==="Enter"&&submit()} />
-          </div>
-          <button onClick={submit}
-            style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"15px",cursor:"pointer"}}>
-            {tab==="login" ? "Sign In 🚀" : "Create Account ✨"}
+        <h1 style={{color:"#fff",fontWeight:900,textAlign:"center"}}>LiveSupport Scheduler</h1>
+
+        <div style={{display:"flex",gap:"8px",margin:"20px 0"}}>
+          <button onClick={() => setTab("login")} style={{flex:1,padding:"12px",background:tab==="login"?"#fbbf24":"#1e2340",color:tab==="login"?"#111":"#fff",border:"none",borderRadius:"10px"}}>
+            Sign In
           </button>
-          {tab==="login" && (
-            <p style={{color:"rgba(255,255,255,0.2)",fontSize:"11px",textAlign:"center",margin:0}}>
-              Demo — DoomLeader/doom123 · StarryNight/pass1 · AshleyLeader/ashley123
-            </p>
+          <button onClick={() => setTab("register")} style={{flex:1,padding:"12px",background:tab==="register"?"#fbbf24":"#1e2340",color:tab==="register"?"#111":"#fff",border:"none",borderRadius:"10px"}}>
+            Create Account
+          </button>
+        </div>
+
+        <div style={{background:"#16192e",padding:"20px",borderRadius:"16px",display:"flex",flexDirection:"column",gap:"12px"}}>
+          {error && <p style={{color:"#f87171",fontSize:"13px"}}>{error}</p>}
+
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            style={{padding:"14px",borderRadius:"10px",border:"none"}}
+          />
+
+          {tab === "register" && (
+            <input
+              placeholder="Username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              style={{padding:"14px",borderRadius:"10px",border:"none"}}
+            />
           )}
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            style={{padding:"14px",borderRadius:"10px",border:"none"}}
+          />
+
+          <button
+            onClick={submit}
+            disabled={loading}
+            style={{padding:"14px",borderRadius:"10px",border:"none",background:"#fbbf24",fontWeight:900}}
+          >
+            {loading ? "Please wait..." : tab === "login" ? "Sign In" : "Create Account"}
+          </button>
         </div>
       </div>
     </div>
   );
 }
-
 
 // ─── Post-Register Screen ─────────────────────────────────────────────────────
 // Shown immediately after account creation so the user can join or create a community.
@@ -738,7 +756,8 @@ function MySignupPanel({ signup, onUpdate, onRemove }) {
 // ─── Occurrence Detail ─────────────────────────────────────────────────────────
 
 function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, onUpdateSignup, onRemoveSignup }) {
-  const { schedule, status, dateObj, daysAway, occurrenceId } = occurrence;
+  const { schedule, dateObj, daysAway, occurrenceId } = occurrence;
+  const status = effectiveStatus(schedule, occurrenceId);
   const ss        = signups.filter(sg => sg.occurrenceId === occurrenceId);
   const totalGift = ss.reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
   const days      = schedule.daysOfWeek ?? (schedule.dayOfWeek != null ? [schedule.dayOfWeek] : []);
@@ -766,23 +785,149 @@ function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, 
         <Pill label="🎁 Expected" value={totalGift>0?`$${totalGift}`:"—"} accent={totalGift>0} />
       </div>
       {status !== STATUS.CANCELLED && (
-        mySignup
-          ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
-          : <SignupForm occurrenceId={occurrenceId} scheduleId={schedule.id} currentUser={currentUser} onSubmit={onSignup} />
+        schedule.userId === currentUser.id
+          ? (
+            <div style={{background:"rgba(251,191,36,0.12)",border:"1px solid rgba(251,191,36,0.25)",borderRadius:"16px",padding:"18px",textAlign:"center"}}>
+              <p style={{color:"#fbbf24",fontWeight:900,fontSize:"14px",margin:"0 0 4px"}}>This is your live</p>
+              <p style={{color:"rgba(255,255,255,0.45)",fontSize:"12px",margin:0}}>Only other users can sign up to support this live.</p>
+            </div>
+          )
+          : mySignup
+            ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
+            : <SignupForm occurrenceId={occurrenceId} scheduleId={schedule.id} currentUser={currentUser} onSubmit={onSignup} />
       )}
       <div style={IS.card}>
         <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Who's Coming ({ss.length})</h3>
         {ss.length===0 ? <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No one yet — be the first! 🌟</p> : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
+        
+        <div style={{display:"flex",gap:"8px",justifyContent:"center",marginTop:"12px",flexWrap:"wrap"}}>
+  {status !== STATUS.CANCELLED ? (
+    <button onClick={() => onCancelOccurrence(schedule.id, occurrenceId)} style={{background:"rgba(239,68,68,0.18)",color:"#f87171",fontSize:"12px",fontWeight:800,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>
+      Cancel This Live Only
+    </button>
+  ) : (
+    <button onClick={() => onResetOccurrence(schedule.id, occurrenceId)} style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:"12px",fontWeight:800,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>
+      Reset This Live
+    </button>
+  )}
+        </div>
       </div>
     </div>
   );
 }
 
 
+// ─── Weekly CSV Export Helpers ────────────────────────────────────────────────
+
+function getWeekStart(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function getWeekOptions(count = 9) {
+  const currentStart = getWeekStart(new Date());
+  return Array.from({ length: count }, (_, i) => {
+    const start = new Date(currentStart);
+    start.setDate(currentStart.getDate() - i * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return {
+      value: start.toISOString().slice(0, 10),
+      start,
+      end,
+      label: `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+    };
+  });
+}
+
+function occurrenceDateFromId(occurrenceId) {
+  if (!occurrenceId || !occurrenceId.includes("__")) return null;
+  const raw = occurrenceId.split("__")[1];
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function isSignupInWeek(signup, weekStartValue) {
+  const start = new Date(`${weekStartValue}T00:00:00`);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  const occurrenceDate = occurrenceDateFromId(signup.occurrenceId);
+  const createdDate = signup.createdAt ? new Date(signup.createdAt) : null;
+  const targetDate = occurrenceDate || createdDate;
+  if (!targetDate || Number.isNaN(targetDate.getTime())) return false;
+  return targetDate >= start && targetDate < end;
+}
+
+function downloadCSVFile(filename, csv) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildWeeklyExportCSV(schedules, signups, options = {}) {
+  const { weekStartValue = getWeekStart(new Date()).toISOString().slice(0, 10), hostUserId = "all" } = options;
+  const rows = [["Host","Platform","Days","Start","End","Status","Occurrence","Supporter Name","Supporter Username","Planned Gift ($)","Comment","Signed Up At"]];
+  const filteredSchedules = schedules.filter(sched => hostUserId === "all" || sched.userId === hostUserId);
+  const weekSignups = signups.filter(sg => isSignupInWeek(sg, weekStartValue));
+
+  for (const sched of filteredSchedules) {
+    const scheduleSignups = weekSignups.filter(sg => sg.scheduleId === sched.id);
+
+    if (scheduleSignups.length === 0) {
+      rows.push([
+        "@" + sched.hostUsername,
+        sched.platform,
+        formatDays(sched.daysOfWeek ?? [sched.dayOfWeek]),
+        formatTime(sched.startTime),
+        formatTime(sched.endTime),
+        effectiveStatus(sched),
+        "",
+        "No supporters signed up",
+        "",
+        "",
+        "",
+        "",
+      ]);
+      continue;
+    }
+
+    for (const sg of scheduleSignups) {
+      const occurrenceDate = occurrenceDateFromId(sg.occurrenceId);
+      rows.push([
+        "@" + sched.hostUsername,
+        sched.platform,
+        formatDays(sched.daysOfWeek ?? [sched.dayOfWeek]),
+        formatTime(sched.startTime),
+        formatTime(sched.endTime),
+        effectiveStatus(sched),
+        occurrenceDate ? occurrenceDate.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" }) : "",
+        sg.displayName || "",
+        sg.supporterUsername || "",
+        sg.plannedGiftAmount != null ? Number(sg.plannedGiftAmount).toFixed(2) : "",
+        sg.comment || "",
+        sg.createdAt ? new Date(sg.createdAt).toLocaleString() : "",
+      ]);
+    }
+  }
+
+  return rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+}
+
 // ─── My Schedule Tab ───────────────────────────────────────────────────────────
 
 function MyScheduleTab({ currentUser, schedules, signups, communities, onSave, onGoLive, onStatusChange }) {
   const [editing, setEditing] = useState(false);
+  const [myCsvWeek, setMyCsvWeek] = useState(getWeekStart(new Date()).toISOString().slice(0, 10));
+  const myWeekOptions = getWeekOptions(9);
   const mySchedules = schedules.filter(s => s.userId === currentUser.id);
   // For simplicity, host manages the first schedule; multiple schedules per community could be extended
   const mySchedule = mySchedules[0] ?? null;
@@ -806,6 +951,15 @@ function MyScheduleTab({ currentUser, schedules, signups, communities, onSave, o
   const totalGift = ss.reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
   const community = communities.find(c => c.id === mySchedule.communityId);
 
+  function handleMyCSVDownload() {
+    if (!mySchedule) return;
+    const csv = buildWeeklyExportCSV([mySchedule], signups, {
+      weekStartValue: myCsvWeek,
+      hostUserId: currentUser.id,
+    });
+    downloadCSVFile(`my-live-signups-${myCsvWeek}.csv`, csv);
+  }
+
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -826,6 +980,17 @@ function MyScheduleTab({ currentUser, schedules, signups, communities, onSave, o
           {totalGift > 0 && <Pill label="Planned 🎁" value={`$${totalGift}`} accent />}
         </div>
       </div>
+      <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
+        <p style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:"0 0 4px"}}>Download Weekly CSV</p>
+        <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:"0 0 12px"}}>Export your supporter signups for a selected week.</p>
+        <div style={{display:"flex",gap:"8px"}}>
+          <select value={myCsvWeek} onChange={e=>setMyCsvWeek(e.target.value)} style={{...IS.input,appearance:"none",flex:1}}>
+            {myWeekOptions.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
+          </select>
+          <button onClick={handleMyCSVDownload} style={{background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"12px",border:"none",borderRadius:"10px",padding:"0 14px",cursor:"pointer"}}>CSV</button>
+        </div>
+      </div>
+
       <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
         <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",margin:"0 0 6px"}}>Live Controls</p>
         <p style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",margin:"0 0 12px"}}>"Live Now" starts automatically. Use these if you go early, end early, or need to cancel.</p>
@@ -895,8 +1060,8 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
   const [form, setForm] = useState({
     platform:    initial?.platform    ?? "",
     daysOfWeek:  initial?.daysOfWeek  ?? (initial?.dayOfWeek!=null?[initial.dayOfWeek]:[]),
-    startTime:   initial?.startTime   ?? "",
-    endTime:     initial?.endTime     ?? "",
+    startTime:   initial?.startTime   ?? "12:00",
+    endTime:     initial?.endTime     ?? "13:00",
     notes:       initial?.notes       ?? "",
     communityId: initial?.communityId ?? myGroups[0]?.id ?? "",
   });
@@ -968,13 +1133,26 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
 
 function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChange, onGoLive, onRemoveMember }) {
   const members   = allUsers.filter(u => u.communityIds?.includes(community.id));
+  const [csvHostFilter, setCsvHostFilter] = useState("all");
+  const [csvWeek, setCsvWeek] = useState(getWeekStart(new Date()).toISOString().slice(0, 10));
+  const weekOptions = getWeekOptions(9);
   const commScheds = schedules.filter(s => s.communityId === community.id);
+  const hostOptions = commScheds.reduce((acc, sched) => {
+    if (!acc.find(h => h.userId === sched.userId)) {
+      acc.push({ userId: sched.userId, label: `@${sched.hostUsername}` });
+    }
+    return acc;
+  }, []);
   const today     = new Date();
   const weekLabel = `Week of ${today.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;
 
   function downloadSummary() {
-    const csv = buildCSV(commScheds, signups);
-    downloadCSV(csv, `${community.name}_${weekLabel.replace(/[\s,]/g,"_")}.csv`);
+    const csv = buildWeeklyExportCSV(commScheds, signups, {
+      weekStartValue: csvWeek,
+      hostUserId: csvHostFilter,
+    });
+    const selectedHost = csvHostFilter === "all" ? "all-hosts" : (hostOptions.find(h => h.userId === csvHostFilter)?.label || "host").replace("@", "");
+    downloadCSVFile(`${community.name}_${selectedHost}_${csvWeek}.csv`, csv);
   }
 
   const totalGiftAll = signups.filter(sg => commScheds.some(s => s.id===sg.scheduleId)).reduce((sum,sg)=>sum+(sg.plannedGiftAmount||0),0);
@@ -988,6 +1166,26 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
           <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:"4px 0 0"}}>Invite code: <span style={{color:"#fbbf24",fontWeight:700}}>{community.inviteCode}</span></p>
         </div>
         <button onClick={downloadSummary} style={{display:"flex",alignItems:"center",gap:"6px",background:"#059669",color:"#fff",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>⬇ CSV</button>
+      </div>
+
+      <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"16px",display:"flex",flexDirection:"column",gap:"10px"}}>
+        <p style={{color:"#fff",fontWeight:900,fontSize:"14px",margin:0}}>CSV Export Options</p>
+        <p style={{color:"rgba(255,255,255,0.45)",fontSize:"12px",lineHeight:1.4,margin:0}}>Choose a week and export all hosts or one specific host. Each row includes the supporters signed up for each live.</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+          <div>
+            <label style={IS.label}>Week</label>
+            <select value={csvWeek} onChange={e=>setCsvWeek(e.target.value)} style={{...IS.input,appearance:"none"}}>
+              {weekOptions.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={IS.label}>Host</label>
+            <select value={csvHostFilter} onChange={e=>setCsvHostFilter(e.target.value)} style={{...IS.input,appearance:"none"}}>
+              <option value="all">All Hosts</option>
+              {hostOptions.map(h => <option key={h.userId} value={h.userId}>{h.label}</option>)}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Summary */}
@@ -1676,27 +1874,45 @@ async function loadUserFromSupabase(authUser) {
   }
 
   const { data: memberships, error: membershipError } = await supabase
-
     .from("community_members")
-
     .select("community_id")
-
     .eq("user_id", authUser.id);
 
-  if (membershipError) console.error("Membership load error:", membershipError);
+  if (membershipError) console.warn("Membership load warning:", membershipError.message || membershipError);
+
+  const communityIds = (memberships || []).map(m => m.community_id);
+
+  if (communityIds.length > 0) {
+    const { data: loadedCommunities, error: communitiesError } = await supabase
+      .from("communities")
+      .select("id, name, invite_code, leader_id, created_at")
+      .in("id", communityIds);
+
+    if (communitiesError) {
+      console.warn("Communities load warning:", communitiesError.message || communitiesError);
+    } else {
+      const mappedCommunities = (loadedCommunities || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        inviteCode: c.invite_code,
+        leaderId: c.leader_id,
+        createdAt: c.created_at,
+      }));
+
+      setCommunities(prev => {
+        const existingIds = new Set(prev.map(c => c.id));
+        const fresh = mappedCommunities.filter(c => !existingIds.has(c.id));
+        return [...prev, ...fresh];
+      });
+    }
+  }
 
   const appUser = {
-
     id: profile.id,
-
     username: profile.username,
-
-    communityIds: (memberships || []).map(m => m.community_id),
-
+    communityIds,
     hasPaid: profile.has_paid ?? false,
-
     paidAt: profile.paid_at ?? null,
-
   };
 
   setCurrentUser(appUser);
@@ -1714,6 +1930,40 @@ async function loadUserFromSupabase(authUser) {
   return appUser;
 
 }
+
+useEffect(() => {
+  let active = true;
+
+  async function restoreSession() {
+    const { data } = await supabase.auth.getSession();
+
+    if (active && data.session?.user) {
+      await loadUserFromSupabase(data.session.user);
+    }
+
+    if (active) setAuthLoading(false);
+  }
+
+  restoreSession();
+
+  const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === "SIGNED_OUT") {
+      setCurrentUser(null);
+      setPendingUser(null);
+      setActiveCommunityId(null);
+      setView(VIEWS.DASHBOARD);
+    }
+
+    if (session?.user && event !== "SIGNED_OUT") {
+      await loadUserFromSupabase(session.user);
+    }
+  });
+
+  return () => {
+    active = false;
+    listener?.subscription?.unsubscribe();
+  };
+}, []);
 
   // ── Auth ──
 async function handleLogin({ email, password }) {
@@ -1773,21 +2023,73 @@ async function handleLogout() {
   return { error: null };
 }
 
-  function handleCreateCommunity(community) {
-    // [DB INTEGRATION] INSERT into communities + community_members tables
-    setCommunities(p=>[...p, community]);
-    // Merge with any existing communityIds so multiple communities are supported
-    const updated = { ...pendingUser, communityIds: [...(pendingUser.communityIds||[]), community.id] };
-    setUsers(p=>p.map(u=>u.id===pendingUser.id ? updated : u));
+  async function handleCreateCommunity(community) {
+    const owner = pendingUser || currentUser;
+    if (!owner) return;
+
+    const { data: savedCommunity, error: communityError } = await supabase
+      .from("communities")
+      .insert({
+        name: community.name,
+        invite_code: community.inviteCode,
+        leader_id: owner.id,
+      })
+      .select("id, name, invite_code, leader_id, created_at")
+      .single();
+
+    if (communityError) {
+      alert(communityError.message);
+      return;
+    }
+
+    const { error: memberError } = await supabase
+      .from("community_members")
+      .insert({
+        community_id: savedCommunity.id,
+        user_id: owner.id,
+        role: "leader",
+      });
+
+    if (memberError) {
+      alert(memberError.message);
+      return;
+    }
+
+    const mappedCommunity = {
+      id: savedCommunity.id,
+      name: savedCommunity.name,
+      inviteCode: savedCommunity.invite_code,
+      leaderId: savedCommunity.leader_id,
+      createdAt: savedCommunity.created_at,
+    };
+
+    setCommunities(p=>[...p, mappedCommunity]);
+    const updated = { ...owner, communityIds: [...(owner.communityIds||[]), mappedCommunity.id] };
+    setUsers(p=>p.map(u=>u.id===owner.id ? updated : u));
     setCurrentUser(updated);
     setPendingUser(null);
-    setActiveCommunityId(community.id);
+    setActiveCommunityId(mappedCommunity.id);
   }
 
-  function handleJoinAfterRegister(community) {
-    // [DB INTEGRATION] INSERT into community_members table
-    const updated = { ...pendingUser, communityIds: [community.id] };
-    setUsers(p=>p.map(u=>u.id===pendingUser.id ? updated : u));
+  async function handleJoinAfterRegister(community) {
+    const owner = pendingUser || currentUser;
+    if (!owner) return;
+
+    const { error } = await supabase
+      .from("community_members")
+      .insert({
+        community_id: community.id,
+        user_id: owner.id,
+        role: "member",
+      });
+
+    if (error && !error.message?.toLowerCase().includes("duplicate")) {
+      alert(error.message);
+      return;
+    }
+
+    const updated = { ...owner, communityIds: [...new Set([...(owner.communityIds||[]), community.id])] };
+    setUsers(p=>p.map(u=>u.id===owner.id ? updated : u));
     setCurrentUser(updated);
     setPendingUser(null);
     setActiveCommunityId(community.id);
@@ -1799,11 +2101,41 @@ async function handleLogout() {
   }
 
   // ── Community ──
-  function handleJoinCommunity(code) {
-    const community = communities.find(c=>c.inviteCode.toUpperCase()===code.toUpperCase());
-    if (!community) return false;
-    if (currentUser.communityIds?.includes(community.id)) return true; // already in
-    // [DB INTEGRATION] INSERT into community_members table
+  async function handleJoinCommunity(code) {
+    let community = communities.find(c=>c.inviteCode.toUpperCase()===code.toUpperCase());
+
+    if (!community) {
+      const { data: foundCommunity, error: findError } = await supabase
+        .from("communities")
+        .select("id, name, invite_code, leader_id, created_at")
+        .eq("invite_code", code.toUpperCase())
+        .maybeSingle();
+
+      if (findError || !foundCommunity) return false;
+
+      community = {
+        id: foundCommunity.id,
+        name: foundCommunity.name,
+        inviteCode: foundCommunity.invite_code,
+        leaderId: foundCommunity.leader_id,
+        createdAt: foundCommunity.created_at,
+      };
+
+      setCommunities(p=>p.find(c=>c.id===community.id) ? p : [...p, community]);
+    }
+
+    if (currentUser.communityIds?.includes(community.id)) return true;
+
+    const { error } = await supabase
+      .from("community_members")
+      .insert({
+        community_id: community.id,
+        user_id: currentUser.id,
+        role: "member",
+      });
+
+    if (error && !error.message?.toLowerCase().includes("duplicate")) return false;
+
     const updated = { ...currentUser, communityIds: [...(currentUser.communityIds||[]), community.id] };
     setUsers(p=>p.map(u=>u.id===currentUser.id?updated:u));
     setCurrentUser(updated);
@@ -1811,12 +2143,46 @@ async function handleLogout() {
     return true;
   }
 
-  function handleCreateFromDashboard(communityName) {
-    // Called when user creates a community from the switcher (not post-register)
-    // [DB INTEGRATION] INSERT into communities + community_members tables
+  async function handleCreateFromDashboard(communityName) {
     const code = communityName.toUpperCase().replace(/\s+/g,"").slice(0,6) +
                  Math.random().toString(36).slice(2,5).toUpperCase();
-    const community = { id:uid(), name:communityName.toUpperCase(), inviteCode:code, leaderId:currentUser.id, createdAt:new Date().toISOString() };
+
+    const { data: savedCommunity, error: communityError } = await supabase
+      .from("communities")
+      .insert({
+        name: communityName.toUpperCase(),
+        invite_code: code,
+        leader_id: currentUser.id,
+      })
+      .select("id, name, invite_code, leader_id, created_at")
+      .single();
+
+    if (communityError) {
+      alert(communityError.message);
+      return;
+    }
+
+    const { error: memberError } = await supabase
+      .from("community_members")
+      .insert({
+        community_id: savedCommunity.id,
+        user_id: currentUser.id,
+        role: "leader",
+      });
+
+    if (memberError) {
+      alert(memberError.message);
+      return;
+    }
+
+    const community = {
+      id: savedCommunity.id,
+      name: savedCommunity.name,
+      inviteCode: savedCommunity.invite_code,
+      leaderId: savedCommunity.leader_id,
+      createdAt: savedCommunity.created_at,
+    };
+
     setCommunities(p=>[...p, community]);
     const updated = { ...currentUser, communityIds: [...(currentUser.communityIds||[]), community.id] };
     setUsers(p=>p.map(u=>u.id===currentUser.id?updated:u));
@@ -1853,12 +2219,21 @@ async function handleLogout() {
   function handleUpdateSignup(updated){ setSignups(p=>p.map(sg=>sg.id===updated.id?updated:sg)); }
   function handleRemoveSignup(id)     { setSignups(p=>p.filter(sg=>sg.id!==id)); }
 
-  if (!currentUser && !pendingUser) return (
-    <>
-      <GlobalStyles />
-      <AuthScreen users={users} onLogin={handleLogin} onRegister={handleRegister} />
-    </>
-  );
+  if (authLoading) return (
+  <>
+    <GlobalStyles />
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a0c18",color:"white"}}>
+      Loading account…
+    </div>
+  </>
+);
+
+if (!currentUser && !pendingUser) return (
+  <>
+    <GlobalStyles />
+    <AuthScreen onLogin={handleLogin} onRegister={handleRegister} />
+  </>
+);
 
   // Paywall gate — show immediately after registration OR login if not paid
   // [DB INTEGRATION] currentUser.hasPaid comes from profiles.has_paid in Supabase
