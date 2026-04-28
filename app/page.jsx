@@ -265,56 +265,159 @@ function AuthScreen({ onLogin, onRegister }) {
     setLoading(false);
   }
 
-  return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"#0a0c18"}}>
-      <div style={{width:"100%",maxWidth:"420px"}}>
-        <h1 style={{color:"#fff",fontWeight:900,textAlign:"center"}}>LiveSupport Scheduler</h1>
+  const fieldStyle = {
+    width: "100%",
+    background: "rgba(255,255,255,0.09)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: "14px",
+    padding: "14px 15px",
+    fontSize: "16px",
+    color: "#fff",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+  };
 
-        <div style={{display:"flex",gap:"8px",margin:"20px 0"}}>
-          <button onClick={() => setTab("login")} style={{flex:1,padding:"12px",background:tab==="login"?"#fbbf24":"#1e2340",color:tab==="login"?"#111":"#fff",border:"none",borderRadius:"10px"}}>
-            Sign In
-          </button>
-          <button onClick={() => setTab("register")} style={{flex:1,padding:"12px",background:tab==="register"?"#fbbf24":"#1e2340",color:tab==="register"?"#111":"#fff",border:"none",borderRadius:"10px"}}>
-            Create Account
-          </button>
+  const labelStyle = {
+    color: "rgba(255,255,255,0.62)",
+    fontSize: "12px",
+    fontWeight: 800,
+    display: "block",
+    marginBottom: "7px",
+    letterSpacing: "0.2px",
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "28px 18px",
+      boxSizing: "border-box",
+      background: "radial-gradient(circle at top left, rgba(251,191,36,0.18), transparent 34%), radial-gradient(circle at bottom right, rgba(59,130,246,0.18), transparent 32%), linear-gradient(180deg,#070914,#101327)",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,0.04) 0,transparent 38%,rgba(255,255,255,0.03) 100%)",pointerEvents:"none"}} />
+      <div style={{position:"absolute",top:"12%",left:"12%",width:"170px",height:"170px",borderRadius:"999px",background:"rgba(251,191,36,0.08)",filter:"blur(35px)",pointerEvents:"none"}} />
+      <div style={{position:"absolute",bottom:"12%",right:"10%",width:"220px",height:"220px",borderRadius:"999px",background:"rgba(96,165,250,0.10)",filter:"blur(45px)",pointerEvents:"none"}} />
+
+      <div style={{width:"100%",maxWidth:"430px",position:"relative",zIndex:1}}>
+        <div style={{textAlign:"center",marginBottom:"22px"}}>
+          <div style={{
+            width:"86px",
+            height:"86px",
+            margin:"0 auto 14px",
+            borderRadius:"28px",
+            display:"flex",
+            alignItems:"center",
+            justifyContent:"center",
+            background:"linear-gradient(145deg,rgba(251,191,36,0.22),rgba(255,255,255,0.07))",
+            border:"1px solid rgba(251,191,36,0.28)",
+            boxShadow:"0 20px 45px rgba(0,0,0,0.35)",
+          }}>
+            <span style={{fontSize:"44px",lineHeight:1}}>📡</span>
+          </div>
+
+          <h1 style={{color:"#fff",fontWeight:950,fontSize:"30px",lineHeight:1.05,margin:"0 0 8px"}}>
+            LiveSupport <span style={{color:"#fbbf24"}}>Scheduler</span>
+          </h1>
+          <p style={{color:"rgba(255,255,255,0.52)",fontSize:"14px",lineHeight:1.45,margin:"0 auto",maxWidth:"330px"}}>
+            Organize live times, supporters, and planned gifts in one clean weekly view.
+          </p>
         </div>
 
-        <div style={{background:"#16192e",padding:"20px",borderRadius:"16px",display:"flex",flexDirection:"column",gap:"12px"}}>
-          {error && <p style={{color:"#f87171",fontSize:"13px"}}>{error}</p>}
+        <div style={{
+          background:"linear-gradient(145deg,rgba(30,35,64,0.96),rgba(15,18,37,0.96))",
+          border:"1px solid rgba(255,255,255,0.09)",
+          borderRadius:"28px",
+          padding:"18px",
+          boxShadow:"0 28px 70px rgba(0,0,0,0.46)",
+          backdropFilter:"blur(14px)",
+        }}>
+          <div style={{display:"flex",background:"rgba(255,255,255,0.08)",borderRadius:"18px",padding:"5px",marginBottom:"18px"}}>
+            <button onClick={() => { setTab("login"); setError(""); }}
+              style={{flex:1,padding:"12px 0",borderRadius:"14px",fontSize:"14px",fontWeight:900,border:"none",cursor:"pointer",transition:"all .2s ease",background:tab==="login"?"#fbbf24":"transparent",color:tab==="login"?"#1c1400":"rgba(255,255,255,0.62)",fontFamily:"inherit"}}>
+              Sign In
+            </button>
+            <button onClick={() => { setTab("register"); setError(""); }}
+              style={{flex:1,padding:"12px 0",borderRadius:"14px",fontSize:"14px",fontWeight:900,border:"none",cursor:"pointer",transition:"all .2s ease",background:tab==="register"?"#fbbf24":"transparent",color:tab==="register"?"#1c1400":"rgba(255,255,255,0.62)",fontFamily:"inherit"}}>
+              Create Account
+            </button>
+          </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            style={{padding:"14px",borderRadius:"10px",border:"none"}}
-          />
-
-          {tab === "register" && (
-            <input
-              placeholder="Username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              style={{padding:"14px",borderRadius:"10px",border:"none"}}
-            />
+          {error && (
+            <p style={{color:"#fecaca",fontSize:"13px",background:"rgba(239,68,68,0.14)",border:"1px solid rgba(248,113,113,0.24)",borderRadius:"14px",padding:"10px 12px",margin:"0 0 14px"}}>
+              {error}
+            </p>
           )}
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            style={{padding:"14px",borderRadius:"10px",border:"none"}}
-          />
+          <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+            <div>
+              <label style={labelStyle}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={fieldStyle}
+                onKeyDown={e => e.key === "Enter" && submit()}
+              />
+            </div>
 
-          <button
-            onClick={submit}
-            disabled={loading}
-            style={{padding:"14px",borderRadius:"10px",border:"none",background:"#fbbf24",fontWeight:900}}
-          >
-            {loading ? "Please wait..." : tab === "login" ? "Sign In" : "Create Account"}
-          </button>
+            {tab === "register" && (
+              <div>
+                <label style={labelStyle}>Username</label>
+                <input
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="your_username"
+                  style={fieldStyle}
+                  onKeyDown={e => e.key === "Enter" && submit()}
+                />
+              </div>
+            )}
+
+            <div>
+              <label style={labelStyle}>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={fieldStyle}
+                onKeyDown={e => e.key === "Enter" && submit()}
+              />
+            </div>
+
+            <button
+              onClick={submit}
+              disabled={loading}
+              style={{
+                width:"100%",
+                background:"linear-gradient(135deg,#fbbf24,#f59e0b)",
+                color:"#1c1400",
+                fontWeight:950,
+                fontSize:"15px",
+                border:"none",
+                borderRadius:"16px",
+                padding:"15px",
+                cursor:"pointer",
+                opacity:loading?0.72:1,
+                boxShadow:"0 14px 30px rgba(251,191,36,0.22)",
+                fontFamily:"inherit",
+              }}
+            >
+              {loading ? "Please wait..." : tab === "login" ? "Sign In" : "Create Account"}
+            </button>
+          </div>
         </div>
+
+        <p style={{color:"rgba(255,255,255,0.34)",fontSize:"11px",textAlign:"center",margin:"16px 0 0"}}>
+          No payments processed inside supporter planning. Gift amounts are for coordination only.
+        </p>
       </div>
     </div>
   );
