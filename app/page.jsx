@@ -341,47 +341,49 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Created successfully ──
   if (createdCode) return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full text-center" style={{maxWidth:"420px"}}>
-        <p className="text-5xl mb-4">🎉</p>
-        <h2 className="text-white font-black text-2xl mb-1">Community Created!</h2>
-        <p className="text-white/50 text-sm mb-6">Share this invite code with your members so they can join.</p>
-        <div className="rounded-2xl p-6 mb-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)", border:"1px solid rgba(251,191,36,0.3)"}}>
-          <p className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">Invite Code</p>
-          <p className="text-amber-400 font-black text-4xl tracking-widest mb-4">{createdCode}</p>
+    <div style={{minHeight:"100vh",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",boxSizing:"border-box"}}>
+      <div style={{width:"100%",maxWidth:"420px",boxSizing:"border-box",textAlign:"center"}}>
+        <p style={{fontSize:"44px",marginBottom:"12px"}}>🎉</p>
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"22px",margin:"0 0 6px"}}>Community Created!</h2>
+        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"14px",margin:"0 0 20px"}}>Share this invite code with your members so they can join.</p>
+        <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:"20px",padding:"24px",marginBottom:"16px"}}>
+          <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",margin:"0 0 8px"}}>Invite Code</p>
+          <p style={{color:"#fbbf24",fontWeight:900,fontSize:"40px",letterSpacing:"4px",margin:"0 0 16px"}}>{createdCode}</p>
           <button onClick={copyCode}
-            className={`w-full font-bold text-sm rounded-xl py-2.5 transition-colors ${copied ? "bg-emerald-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}>
+            style={{width:"100%",fontWeight:700,fontSize:"14px",borderRadius:"12px",padding:"11px",border:"none",cursor:"pointer",
+              background:copied?"#10b981":"rgba(255,255,255,0.1)",color:copied?"#fff":"#fff"}}>
             {copied ? "✓ Copied!" : "Copy Code"}
           </button>
         </div>
-        <p className="text-white/30 text-xs mb-6">You can always find this code in your Admin panel later.</p>
-        <button onClick={onSkip} className="w-full bg-amber-400 hover:bg-amber-300 text-gray-900 font-black text-sm rounded-xl py-3 transition-colors">
+        <p style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",margin:"0 0 20px"}}>You can always find this code in your Admin panel later.</p>
+        <button onClick={onSkip} style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer",boxSizing:"border-box"}}>
           Go to Dashboard 🚀
         </button>
       </div>
     </div>
   );
 
+
   // ── Join flow ──
   if (step === "join") return (
-    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full" style={{maxWidth:"420px"}}>
-        <button onClick={() => { setStep("choice"); setError(""); }} className="text-white/50 hover:text-white text-sm font-semibold mb-6 flex items-center gap-1">← Back</button>
-        <h2 className="text-white font-black text-2xl mb-1">Join a Community</h2>
-        <p className="text-white/40 text-sm mb-6">Ask your community leader for their invite code.</p>
-        <div className="rounded-2xl p-5 space-y-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-          {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
+    <div style={{minHeight:"100vh",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",boxSizing:"border-box"}}>
+      <div style={{width:"100%",maxWidth:"420px",boxSizing:"border-box"}}>
+        <button onClick={() => { setStep("choice"); setError(""); }} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontWeight:700,cursor:"pointer",padding:"0 0 20px",display:"flex",alignItems:"center",gap:"4px"}}>← Back</button>
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"22px",margin:"0 0 6px"}}>Join a Community</h2>
+        <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",margin:"0 0 20px"}}>Ask your community leader for their invite code.</p>
+        <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
+          {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
           <div>
-            <label className={labelCls}>Invite Code</label>
+            <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Invite Code</label>
             <input value={inviteCode} onChange={e=>setInviteCode(e.target.value)} placeholder="e.g. DOOM2024"
-              className={inputCls} style={{textTransform:"uppercase"}}
+              style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",textTransform:"uppercase",fontFamily:"inherit"}}
               onKeyDown={e=>e.key==="Enter"&&handleJoin()} />
           </div>
-          <button onClick={handleJoin} className="w-full bg-amber-400 hover:bg-amber-300 text-gray-900 font-black text-sm rounded-xl py-3 transition-colors">
+          <button onClick={handleJoin} style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"}}>
             Join Community 🙌
           </button>
         </div>
-        <button onClick={onSkip} className="w-full text-white/30 hover:text-white/60 text-xs font-semibold mt-4 transition-colors">
+        <button onClick={onSkip} style={{width:"100%",background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:"12px",fontWeight:700,padding:"14px",cursor:"pointer",marginTop:"4px"}}>
           Skip for now
         </button>
       </div>
@@ -390,24 +392,24 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Create flow ──
   if (step === "create") return (
-    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full" style={{maxWidth:"420px"}}>
-        <button onClick={() => { setStep("choice"); setError(""); }} className="text-white/50 hover:text-white text-sm font-semibold mb-6 flex items-center gap-1">← Back</button>
-        <h2 className="text-white font-black text-2xl mb-1">Create a Community</h2>
-        <p className="text-white/40 text-sm mb-6">You'll be the leader. An invite code will be generated automatically.</p>
-        <div className="rounded-2xl p-5 space-y-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-          {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
+    <div style={{minHeight:"100vh",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",boxSizing:"border-box"}}>
+      <div style={{width:"100%",maxWidth:"420px",boxSizing:"border-box"}}>
+        <button onClick={() => { setStep("choice"); setError(""); }} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontWeight:700,cursor:"pointer",padding:"0 0 20px",display:"flex",alignItems:"center",gap:"4px"}}>← Back</button>
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"22px",margin:"0 0 6px"}}>Create a Community</h2>
+        <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",margin:"0 0 20px"}}>You'll be the leader. An invite code is generated automatically.</p>
+        <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
+          {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
           <div>
-            <label className={labelCls}>Community Name</label>
+            <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Community Name</label>
             <input value={communityName} onChange={e=>setCommunityName(e.target.value)} placeholder="e.g. DOOMSQUAD"
-              className={inputCls} style={{textTransform:"uppercase"}}
+              style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",textTransform:"uppercase",fontFamily:"inherit"}}
               onKeyDown={e=>e.key==="Enter"&&handleCreate()} />
           </div>
-          <button onClick={handleCreate} className="w-full bg-amber-400 hover:bg-amber-300 text-gray-900 font-black text-sm rounded-xl py-3 transition-colors">
+          <button onClick={handleCreate} style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"}}>
             Create Community 👑
           </button>
         </div>
-        <button onClick={onSkip} className="w-full text-white/30 hover:text-white/60 text-xs font-semibold mt-4 transition-colors">
+        <button onClick={onSkip} style={{width:"100%",background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:"12px",fontWeight:700,padding:"14px",cursor:"pointer",marginTop:"4px"}}>
           Skip for now
         </button>
       </div>
@@ -416,37 +418,35 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Initial choice ──
   return (
-    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full" style={{maxWidth:"420px"}}>
-        <div className="text-center mb-8">
-          <p className="text-5xl mb-3">👋</p>
-          <h2 className="text-white font-black text-2xl">Welcome, @{newUser.username}!</h2>
-          <p className="text-white/40 text-sm mt-2">Communities keep lives organized by group.<br/>What would you like to do?</p>
+    <div style={{minHeight:"100vh",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",boxSizing:"border-box"}}>
+      <div style={{width:"100%",maxWidth:"420px",boxSizing:"border-box"}}>
+        <div style={{textAlign:"center",marginBottom:"32px"}}>
+          <p style={{fontSize:"44px",marginBottom:"12px"}}>👋</p>
+          <h2 style={{color:"#fff",fontWeight:900,fontSize:"24px",margin:0}}>Welcome, @{newUser.username}!</h2>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",marginTop:"8px"}}>Communities keep lives organized by group.<br/>What would you like to do?</p>
         </div>
-        <div className="space-y-3">
+        <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
           <button onClick={() => setStep("create")}
-            className="w-full rounded-2xl p-4 text-left transition-colors hover:scale-[1.01]"
-            style={{background:"linear-gradient(145deg,#1e2340,#16192e)", border:"1px solid rgba(251,191,36,0.2)"}}>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">👑</span>
+            style={{width:"100%",background:"linear-gradient(145deg,#1e2340,#16192e)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"18px",padding:"18px",textAlign:"left",cursor:"pointer",boxSizing:"border-box"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
+              <span style={{fontSize:"28px"}}>👑</span>
               <div>
-                <p className="text-white font-black text-base">Create a Community</p>
-                <p className="text-white/50 text-xs mt-0.5">You'll be the leader. Get an invite code to share.</p>
+                <p style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Create a Community</p>
+                <p style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",margin:"3px 0 0"}}>You'll be the leader. Get an invite code to share.</p>
               </div>
             </div>
           </button>
           <button onClick={() => setStep("join")}
-            className="w-full rounded-2xl p-4 text-left transition-colors hover:scale-[1.01]"
-            style={{background:"linear-gradient(145deg,#1e2340,#16192e)", border:"1px solid rgba(255,255,255,0.07)"}}>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🤝</span>
+            style={{width:"100%",background:"linear-gradient(145deg,#1e2340,#16192e)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"18px",padding:"18px",textAlign:"left",cursor:"pointer",boxSizing:"border-box"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
+              <span style={{fontSize:"28px"}}>🤝</span>
               <div>
-                <p className="text-white font-black text-base">Join a Community</p>
-                <p className="text-white/50 text-xs mt-0.5">Enter an invite code from your community leader.</p>
+                <p style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Join a Community</p>
+                <p style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",margin:"3px 0 0"}}>Enter an invite code from your community leader.</p>
               </div>
             </div>
           </button>
-          <button onClick={onSkip} className="w-full text-white/30 hover:text-white/50 text-xs font-semibold py-3 transition-colors">
+          <button onClick={onSkip} style={{width:"100%",background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:"13px",fontWeight:700,padding:"12px",cursor:"pointer"}}>
             Skip for now — I'll join later
           </button>
         </div>
@@ -629,10 +629,10 @@ function SignupForm({ occurrenceId, scheduleId, currentUser, onSubmit }) {
   }
 
   if (done) return (
-    <div className="rounded-2xl bg-emerald-500/20 border border-emerald-500/40 p-6 text-center">
-      <p className="text-3xl mb-2">🎉</p>
-      <p className="text-emerald-300 font-black text-lg">You're signed up!</p>
-      <p className="text-white/50 text-sm mt-1">See you in the live.</p>
+    <div style={{background:"rgba(16,185,129,0.15)",border:"1px solid rgba(52,211,153,0.35)",borderRadius:"16px",padding:"24px",textAlign:"center"}}>
+      <p style={{fontSize:"28px",marginBottom:"8px"}}>🎉</p>
+      <p style={{color:"#6ee7b7",fontWeight:900,fontSize:"17px",margin:0}}>You're signed up!</p>
+      <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",margin:"6px 0 0"}}>See you in the live.</p>
     </div>
   );
 
@@ -679,37 +679,37 @@ function MySignupPanel({ signup, onUpdate, onRemove }) {
   }
 
   if (mode === "confirm-remove") return (
-    <div className="rounded-2xl p-5 text-center" style={{background:"linear-gradient(145deg,#2a1a1a,#1e1010)",border:"1px solid rgba(239,68,68,0.25)"}}>
-      <p className="text-2xl mb-2">⚠️</p>
-      <p className="text-white font-black text-base mb-1">Remove your signup?</p>
-      <p className="text-white/50 text-sm mb-4">You can always sign up again later.</p>
-      <div className="flex gap-2">
-        <button onClick={() => setMode("view")} className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl py-2.5 transition-colors">Keep It</button>
-        <button onClick={() => onRemove(signup.id)} className="flex-1 bg-red-500 hover:bg-red-400 text-white font-bold text-sm rounded-xl py-2.5 transition-colors">Yes, Remove</button>
+    <div style={{background:"linear-gradient(145deg,#2a1a1a,#1e1010)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:"16px",padding:"20px",textAlign:"center"}}>
+      <p style={{fontSize:"24px",marginBottom:"8px"}}>⚠️</p>
+      <p style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:"0 0 4px"}}>Remove your signup?</p>
+      <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",margin:"0 0 16px"}}>You can always sign up again later.</p>
+      <div style={{display:"flex",gap:"8px"}}>
+        <button onClick={() => setMode("view")} style={{flex:1,background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"14px",border:"none",borderRadius:"12px",padding:"11px",cursor:"pointer"}}>Keep It</button>
+        <button onClick={() => onRemove(signup.id)} style={{flex:1,background:"#ef4444",color:"#fff",fontWeight:700,fontSize:"14px",border:"none",borderRadius:"12px",padding:"11px",cursor:"pointer"}}>Yes, Remove</button>
       </div>
     </div>
   );
 
   if (mode === "edit") return (
-    <div className="rounded-2xl p-4 space-y-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)",border:"1px solid rgba(251,191,36,0.2)"}}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-white font-black text-base">Edit Your Signup</h3>
-        <button onClick={() => { setGift(signup.plannedGiftAmount!=null?String(signup.plannedGiftAmount):""); setComment(signup.comment||""); setMode("view"); }} className="text-white/40 hover:text-white text-xs font-semibold">Cancel</button>
+    <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:"16px",padding:"18px",display:"flex",flexDirection:"column",gap:"14px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Edit Your Signup</h3>
+        <button onClick={() => { setGift(signup.plannedGiftAmount!=null?String(signup.plannedGiftAmount):""); setComment(signup.comment||""); setMode("view"); }} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:"13px",fontWeight:700,cursor:"pointer"}}>Cancel</button>
       </div>
-      <p className="text-white/40 text-xs">⚠️ Gift amounts are for planning only — no payment is taken here.</p>
+      <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:0}}>⚠️ Gift amounts are for planning only — no payment is taken here.</p>
       <div>
-        <label className={labelCls}>Planned Gift Amount — <span className="text-amber-400">optional, no charge</span></label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">$</span>
-          <input type="number" min="0" value={gift} onChange={e=>setGift(e.target.value)} placeholder="0.00" className={`${inputCls} pl-7`} />
+        <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Planned Gift Amount — <span style={{color:"#fbbf24"}}>optional, no charge</span></label>
+        <div style={{position:"relative"}}>
+          <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",color:"rgba(255,255,255,0.4)",fontSize:"15px"}}>$</span>
+          <input type="number" min="0" value={gift} onChange={e=>setGift(e.target.value)} placeholder="0.00" style={{...IS.input,paddingLeft:"32px"}} />
         </div>
-        {gift !== "" && <button onClick={() => setGift("")} className="text-white/30 text-xs mt-1 hover:text-white/60">✕ Clear amount</button>}
+        {gift !== "" && <button onClick={() => setGift("")} style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:"12px",marginTop:"4px",cursor:"pointer"}}>✕ Clear amount</button>}
       </div>
       <div>
-        <label className={labelCls}>Hype message (optional)</label>
-        <textarea value={comment} onChange={e=>setComment(e.target.value)} rows={2} placeholder="Drop some hype! 🎉" className={`${inputCls} resize-none`} />
+        <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Hype message (optional)</label>
+        <textarea value={comment} onChange={e=>setComment(e.target.value)} rows={2} placeholder="Drop some hype! 🎉" style={IS.textarea} />
       </div>
-      <button onClick={handleSave} className="w-full bg-amber-400 hover:bg-amber-300 text-gray-900 font-black text-sm rounded-xl py-3 transition-colors">Save Changes ✓</button>
+      <button onClick={handleSave} style={IS.btn}>Save Changes ✓</button>
     </div>
   );
 
@@ -806,38 +806,38 @@ function MyScheduleTab({ currentUser, schedules, signups, communities, onSave, o
   const community = communities.find(c => c.id === mySchedule.communityId);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-white font-black text-xl">My Schedule</h2>
-        <button onClick={() => setEditing(true)} className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl font-semibold transition-colors">✏️ Edit</button>
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"20px",margin:0}}>My Schedule</h2>
+        <button onClick={() => setEditing(true)} style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>✏️ Edit</button>
       </div>
       <div className="rounded-2xl p-5" style={{background:"linear-gradient(135deg,#1a1f3c,#0f1225)"}}>
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",flexWrap:"wrap"}}>
           <Badge status={status} />
-          <span className="text-white/50 text-xs">{platformIcon(mySchedule.platform)} {mySchedule.platform}</span>
-          {community && <span className="bg-white/10 text-white/60 text-xs font-bold px-2 py-0.5 rounded-full">👥 {community.name}</span>}
+          <span style={{color:"rgba(255,255,255,0.5)",fontSize:"12px"}}>{platformIcon(mySchedule.platform)} {mySchedule.platform}</span>
+          {community && <span style={{background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.6)",fontSize:"11px",fontWeight:700,padding:"2px 8px",borderRadius:"20px"}}>👥 {community.name}</span>}
         </div>
-        <p className="text-white font-black text-xl">@{currentUser.username}</p>
-        <p className="text-amber-400 text-sm mt-0.5">Every {formatDays(mySchedule.daysOfWeek ?? [mySchedule.dayOfWeek])} · {formatTime(mySchedule.startTime)} – {formatTime(mySchedule.endTime)}</p>
-        {mySchedule.notes && <p className="text-white/60 text-xs mt-2 bg-white/5 rounded-lg px-3 py-2">{mySchedule.notes}</p>}
-        <div className="flex gap-2 mt-4">
+        <p style={{color:"#fff",fontWeight:900,fontSize:"20px",margin:0}}>@{currentUser.username}</p>
+        <p style={{color:"#fbbf24",fontSize:"13px",fontWeight:700,margin:"4px 0 0"}}>Every {formatDays(mySchedule.daysOfWeek ?? [mySchedule.dayOfWeek])} · {formatTime(mySchedule.startTime)} – {formatTime(mySchedule.endTime)}</p>
+        {mySchedule.notes && <p style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",margin:"8px 0 0",background:"rgba(255,255,255,0.05)",borderRadius:"8px",padding:"8px 12px"}}>{mySchedule.notes}</p>}
+        <div style={{display:"flex",gap:"8px",marginTop:"14px"}}>
           <Pill label="Supporters" value={ss.length} />
           {totalGift > 0 && <Pill label="Planned 🎁" value={`$${totalGift}`} accent />}
         </div>
       </div>
       <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-        <p className="text-white/50 text-xs font-semibold uppercase tracking-wide mb-2">Live Controls</p>
-        <p className="text-white/35 text-xs mb-3">"Live Now" starts automatically during your window. Use these if you go early, end early, or need to cancel.</p>
-        <div className="flex flex-wrap gap-2">
-          {status !== STATUS.LIVE_NOW && status !== STATUS.CANCELLED && <button onClick={() => onGoLive(mySchedule.id)} className="text-xs bg-red-500/80 hover:bg-red-500 text-white px-4 py-2 rounded-xl font-bold transition-colors">🔴 Go Live Early</button>}
-          {status === STATUS.LIVE_NOW && <button onClick={() => onStatusChange(mySchedule.id, STATUS.COMPLETED)} className="text-xs bg-emerald-600/80 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold transition-colors">✓ End Live</button>}
-          {status !== STATUS.CANCELLED && <button onClick={() => onStatusChange(mySchedule.id, STATUS.CANCELLED)} className="text-xs bg-gray-600/80 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold transition-colors">✕ Cancel This Week</button>}
-          {mySchedule.manualStatus && <button onClick={() => onStatusChange(mySchedule.id, null)} className="text-xs bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl font-bold transition-colors">↺ Reset to Auto</button>}
+        <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",margin:"0 0 6px"}}>Live Controls</p>
+        <p style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",margin:"0 0 12px"}}>"Live Now" starts automatically. Use these if you go early, end early, or need to cancel.</p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+          {status !== STATUS.LIVE_NOW && status !== STATUS.CANCELLED && <button onClick={() => onGoLive(mySchedule.id)} style={{background:"rgba(239,68,68,0.2)",color:"#f87171",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>🔴 Go Live Early</button>}
+          {status === STATUS.LIVE_NOW && <button onClick={() => onStatusChange(mySchedule.id, STATUS.COMPLETED)} style={{background:"rgba(5,150,105,0.2)",color:"#6ee7b7",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>✓ End Live</button>}
+          {status !== STATUS.CANCELLED && <button onClick={() => onStatusChange(mySchedule.id, STATUS.CANCELLED)} style={{background:"rgba(107,114,128,0.2)",color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>✕ Cancel This Week</button>}
+          {mySchedule.manualStatus && <button onClick={() => onStatusChange(mySchedule.id, null)} style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>↺ Reset to Auto</button>}
         </div>
       </div>
       <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-        <h3 className="text-white font-black text-base mb-3">My Supporters ({ss.length})</h3>
-        {ss.length===0 ? <p className="text-white/40 text-sm text-center py-4">No one signed up yet.</p> : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:"0 0 12px"}}>My Supporters ({ss.length})</h3>
+        {ss.length===0 ? <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No one signed up yet.</p> : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
       </div>
     </div>
   );
@@ -869,12 +869,12 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
   }
 
   return (
-    <div className="space-y-4 pb-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-white font-black text-xl">{initial?"Edit My Schedule":"Set My Weekly Schedule"}</h2>
-        <button onClick={onCancel} className="text-white/50 hover:text-white text-sm">Cancel</button>
+    <div style={{display:"flex",flexDirection:"column",gap:"14px",paddingBottom:"16px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"20px",margin:0}}>{initial?"Edit My Schedule":"Set My Weekly Schedule"}</h2>
+        <button onClick={onCancel} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"14px",cursor:"pointer"}}>Cancel</button>
       </div>
-      {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
       <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
         <p style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",margin:0}}>Your username <span style={{color:"#fbbf24",fontWeight:700}}>@{username}</span> is shown as host automatically.</p>
         {myGroups.length > 0 && (
@@ -941,19 +941,19 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
   const liveNowCount = commScheds.filter(s => effectiveStatus(s)===STATUS.LIVE_NOW).length;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <h2 className="text-white font-black text-xl">👥 {community.name}</h2>
-          <p className="text-white/40 text-xs mt-0.5">Invite code: <span className="text-amber-400 font-bold">{community.inviteCode}</span></p>
+          <h2 style={{color:"#fff",fontWeight:900,fontSize:"20px",margin:0}}>👥 {community.name}</h2>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:"4px 0 0"}}>Invite code: <span style={{color:"#fbbf24",fontWeight:700}}>{community.inviteCode}</span></p>
         </div>
-        <button onClick={downloadSummary} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors">⬇ CSV</button>
+        <button onClick={downloadSummary} style={{display:"flex",alignItems:"center",gap:"6px",background:"#059669",color:"#fff",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>⬇ CSV</button>
       </div>
 
       {/* Summary */}
       <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1a1f3c,#0f1225)"}}>
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-wide mb-3">{weekLabel}</p>
-        <div className="grid grid-cols-4 gap-2">
+        <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",margin:"0 0 10px"}}>{weekLabel}</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"6px"}}>
           <Pill label="Members"  value={members.length} />
           <Pill label="Hosts"    value={commScheds.length} />
           <Pill label="Live Now" value={liveNowCount} />
@@ -963,17 +963,17 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
 
       {/* Schedules */}
       <div>
-        <h3 className="text-white font-black text-base mb-3">Schedules ({commScheds.length})</h3>
-        {commScheds.length===0 && <p className="text-white/40 text-sm text-center py-4">No schedules yet.</p>}
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:"0 0 10px"}}>Schedules ({commScheds.length})</h3>
+        {commScheds.length===0 && <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0"}}>No schedules yet.</p>}
         {commScheds.map(sched => {
           const ss = signups.filter(sg=>sg.scheduleId===sched.id);
           const totalGift = ss.reduce((sum,sg)=>sum+(sg.plannedGiftAmount||0),0);
           const status = effectiveStatus(sched);
           return (
-            <div key={sched.id} className="rounded-2xl p-4 mb-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-              <div className="flex items-start justify-between gap-2 mb-2">
+            <div key={sched.id} style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"14px",marginBottom:"10px"}}>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"8px",marginBottom:"8px"}}>
                 <div>
-                  <div className="flex items-center gap-2 mb-1 flex-wrap"><Badge status={status} /><span className="text-white/40 text-xs">{platformIcon(sched.platform)} {sched.platform}</span></div>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px",flexWrap:"wrap"}}><Badge status={status} /><span style={{color:"rgba(255,255,255,0.4)",fontSize:"11px"}}>{platformIcon(sched.platform)} {sched.platform}</span></div>
                   <p className="text-white font-black text-sm">@{sched.hostUsername}</p>
                   <p className="text-white/40 text-xs">{formatDays(sched.daysOfWeek??[sched.dayOfWeek])} · {formatTime(sched.startTime)} – {formatTime(sched.endTime)}</p>
                 </div>
@@ -983,17 +983,17 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
                   {totalGift>0 && <p className="text-emerald-400 text-xs font-semibold">${totalGift} est.</p>}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {status!==STATUS.LIVE_NOW&&status!==STATUS.CANCELLED&&<button onClick={()=>onGoLive(sched.id)} className="text-xs bg-red-500/80 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors">🔴 Go Live</button>}
-                {status!==STATUS.COMPLETED&&status!==STATUS.CANCELLED&&<button onClick={()=>onStatusChange(sched.id,STATUS.COMPLETED)} className="text-xs bg-emerald-600/80 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors">✓ Complete</button>}
-                {status!==STATUS.CANCELLED&&<button onClick={()=>onStatusChange(sched.id,STATUS.CANCELLED)} className="text-xs bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors">✕ Cancel</button>}
-                {sched.manualStatus&&<button onClick={()=>onStatusChange(sched.id,null)} className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors">↺ Reset</button>}
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"8px"}}>
+                {status!==STATUS.LIVE_NOW&&status!==STATUS.CANCELLED&&<button onClick={()=>onGoLive(sched.id)} style={{background:"rgba(239,68,68,0.2)",color:"#f87171",fontSize:"11px",fontWeight:700,border:"none",borderRadius:"8px",padding:"6px 10px",cursor:"pointer"}}>🔴 Go Live</button>}
+                {status!==STATUS.COMPLETED&&status!==STATUS.CANCELLED&&<button onClick={()=>onStatusChange(sched.id,STATUS.COMPLETED)} style={{background:"rgba(5,150,105,0.2)",color:"#6ee7b7",fontSize:"11px",fontWeight:700,border:"none",borderRadius:"8px",padding:"6px 10px",cursor:"pointer"}}>✓ Complete</button>}
+                {status!==STATUS.CANCELLED&&<button onClick={()=>onStatusChange(sched.id,STATUS.CANCELLED)} style={{background:"rgba(107,114,128,0.2)",color:"rgba(255,255,255,0.5)",fontSize:"11px",fontWeight:700,border:"none",borderRadius:"8px",padding:"6px 10px",cursor:"pointer"}}>✕ Cancel</button>}
+                {sched.manualStatus&&<button onClick={()=>onStatusChange(sched.id,null)} style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:"11px",fontWeight:700,border:"none",borderRadius:"8px",padding:"6px 10px",cursor:"pointer"}}>↺ Reset</button>}
               </div>
               {ss.length>0 && (
-                <div className="mt-3 border-t border-white/10 pt-3 space-y-1.5">
+                <div style={{marginTop:"10px",borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:"10px",display:"flex",flexDirection:"column",gap:"6px"}}>
                   {ss.map(sg => (
-                    <div key={sg.id} className="flex items-center gap-2 text-xs">
-                      <span className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-white font-black flex-shrink-0">{sg.displayName[0].toUpperCase()}</span>
+                    <div key={sg.id} style={{display:"flex",alignItems:"center",gap:"8px",fontSize:"12px"}}>
+                      <span style={{width:22,height:22,borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f43f5e)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"10px",flexShrink:0}}>{sg.displayName[0].toUpperCase()}</span>
                       <span className="text-white font-semibold">{sg.displayName}</span>
                       {sg.supporterUsername&&<span className="text-white/40">{sg.supporterUsername}</span>}
                       {sg.plannedGiftAmount!=null&&<span className="text-amber-300 font-semibold ml-auto">${sg.plannedGiftAmount}</span>}
@@ -1008,12 +1008,12 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
 
       {/* Members */}
       <div>
-        <h3 className="text-white font-black text-base mb-3">Members ({members.length})</h3>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:"0 0 10px"}}>Members ({members.length})</h3>
         <div className="rounded-2xl overflow-hidden" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
           {members.map((m, i) => (
-            <div key={m.id} className={`flex items-center justify-between px-4 py-3 ${i<members.length-1?"border-b border-white/10":""}`}>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-white font-black text-xs flex-shrink-0">{m.username[0].toUpperCase()}</div>
+            <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderBottom:i<members.length-1?"1px solid rgba(255,255,255,0.08)":"none"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f43f5e)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"12px",flexShrink:0}}>{m.username[0].toUpperCase()}</div>
                 <div>
                   <p className="text-white font-semibold text-sm">@{m.username}</p>
                   {m.id === community.leaderId && <p className="text-amber-400 text-xs font-bold">👑 Leader</p>}
@@ -1064,7 +1064,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
   const activeCommunity = communities.find(c=>c.id===activeCommunityId);
 
   return (
-    <div className="space-y-4">
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
       {/* Community switcher */}
       <CommunitySwitcher myGroups={myGroups} activeCommunityId={activeCommunityId} onSwitch={onSwitchCommunity} onJoin={onJoinCommunity} onCreate={onCreateCommunity} />
 
@@ -1094,12 +1094,12 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
           </div>
 
           {filtered.length===0 ? (
-            <div className="text-center py-16">
-              <p className="text-4xl mb-3">{filter==="Live Now"?"📡":search?"🔎":"📭"}</p>
+            <div style={{textAlign:"center",padding:"48px 0"}}>
+              <p style={{fontSize:"36px",marginBottom:"10px"}}>{filter==="Live Now"?"📡":search?"🔎":"📭"}</p>
               <p className="text-white/40 font-semibold">
                 {search?`No lives found for "@${search.replace(/^@/,"")}"`:filter==="Live Now"?"No one is live right now.":filter==="Coming Up"?"No upcoming lives.":"No schedules in this community yet."}
               </p>
-              {!search&&filter==="All"&&<button onClick={onAddSchedule} className="mt-3 text-amber-400 text-sm underline">Post your schedule</button>}
+              {!search&&filter==="All"&&<button onClick={onAddSchedule} style={{background:"none",border:"none",color:"#fbbf24",fontSize:"13px",textDecoration:"underline",cursor:"pointer",marginTop:"10px",display:"inline-block"}}>Post your schedule</button>}
             </div>
           ) : (
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))",gap:"12px"}}>
@@ -1160,68 +1160,47 @@ function PaywallScreen({ currentUser, onPaymentSuccess }) {
   }
 
   return (
-    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full" style={{maxWidth:"420px"}}>
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <p className="text-5xl mb-3">📡</p>
-          <h1 className="text-white font-black text-2xl tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></h1>
+    <div style={{minHeight:"100vh",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",boxSizing:"border-box"}}>
+      <div style={{width:"100%",maxWidth:"420px",boxSizing:"border-box"}}>
+        <div style={{textAlign:"center",marginBottom:"24px"}}>
+          <p style={{fontSize:"44px",marginBottom:"10px"}}>📡</p>
+          <h1 style={{color:"#fff",fontWeight:900,fontSize:"24px",margin:0}}>LiveSupport <span style={{color:"#fbbf24"}}>Scheduler</span></h1>
         </div>
-
-        {/* Pricing card */}
-        <div className="rounded-2xl overflow-hidden mb-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)", border:"1px solid rgba(251,191,36,0.25)"}}>
-          {/* Header */}
-          <div className="px-6 py-5 text-center" style={{background:"linear-gradient(135deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05))"}}>
-            <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">Full Access</p>
-            <div className="flex items-start justify-center gap-1">
-              <span className="text-white text-2xl font-black mt-1">$</span>
-              <span className="text-white font-black" style={{fontSize:"4rem",lineHeight:1}}>2.99</span>
-              <span className="text-white/50 text-sm mt-auto mb-2">/mo</span>
+        <div style={{borderRadius:"20px",overflow:"hidden",marginBottom:"16px",border:"1px solid rgba(251,191,36,0.25)",background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
+          <div style={{padding:"20px 24px",textAlign:"center",background:"linear-gradient(135deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05))"}}>
+            <p style={{color:"#fbbf24",fontSize:"11px",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",margin:"0 0 8px"}}>Full Access</p>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"center",gap:"4px"}}>
+              <span style={{color:"#fff",fontSize:"22px",fontWeight:900,marginTop:"6px"}}>$</span>
+              <span style={{color:"#fff",fontWeight:900,fontSize:"56px",lineHeight:1}}>2.99</span>
+              <span style={{color:"rgba(255,255,255,0.5)",fontSize:"14px",alignSelf:"flex-end",marginBottom:"6px"}}>/mo</span>
             </div>
-            <p className="text-white/50 text-sm mt-1">Cancel anytime</p>
+            <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",margin:"6px 0 0"}}>Cancel anytime</p>
           </div>
-
-          {/* Features */}
-          <div className="px-6 py-5 space-y-3">
-            {[
-              "View all community live schedules",
-              "Sign up to support your favorite hosts",
-              "Get notified when hosts go live",
-              "Track planned gift amounts",
-              "Join multiple communities",
-              "Post your own weekly schedule",
-            ].map((f, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-amber-400 text-base flex-shrink-0">✓</span>
-                <span className="text-white/80 text-sm">{f}</span>
+          <div style={{padding:"16px 24px",display:"flex",flexDirection:"column",gap:"12px"}}>
+            {["View all community live schedules","Sign up to support your favorite hosts","Get notified when hosts go live","Track planned gift amounts","Join multiple communities","Post your own weekly schedule"].map((f,i) => (
+              <div key={i} style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                <span style={{color:"#fbbf24",fontSize:"15px",flexShrink:0}}>✓</span>
+                <span style={{color:"rgba(255,255,255,0.8)",fontSize:"14px"}}>{f}</span>
               </div>
             ))}
           </div>
-
-          {/* CTA */}
-          <div className="px-6 pb-6">
-            {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2 mb-3 text-center">{error}</p>}
+          <div style={{padding:"0 24px 24px"}}>
+            {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",marginBottom:"12px",textAlign:"center"}}>{error}</p>}
             <button onClick={handleSubscribe} disabled={loading}
-              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-60 text-gray-900 font-black text-base rounded-2xl py-4 transition-colors flex items-center justify-center gap-2">
+              style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"16px",border:"none",borderRadius:"14px",padding:"15px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",opacity:loading?0.7:1,boxSizing:"border-box"}}>
               {loading ? (
                 <>
                   <span style={{width:18,height:18,border:"2.5px solid #92400e",borderTopColor:"transparent",borderRadius:"50%",display:"inline-block",animation:"spin 0.7s linear infinite"}} />
                   Processing…
                 </>
-              ) : (
-                <>🔓 Subscribe for $2.99/mo</>
-              )}
+              ) : <>🔓 Subscribe for $2.99/mo</>}
             </button>
-            <p className="text-white/25 text-xs text-center mt-3">
-              Secured by Stripe · Cancel anytime in settings
-            </p>
+            <p style={{color:"rgba(255,255,255,0.25)",fontSize:"11px",textAlign:"center",margin:"10px 0 0"}}>Secured by Stripe · Cancel anytime in settings</p>
           </div>
         </div>
-
-        {/* Signed in as */}
-        <p className="text-white/30 text-xs text-center">
-          Signed in as <span className="text-white/50 font-semibold">@{currentUser.username}</span> ·{" "}
-          <button onClick={() => window.location.reload()} className="underline hover:text-white/50 transition-colors">Sign out</button>
+        <p style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",textAlign:"center"}}>
+          Signed in as <span style={{color:"rgba(255,255,255,0.5)",fontWeight:700}}>@{currentUser.username}</span>{" · "}
+          <button onClick={() => window.location.reload()} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",textDecoration:"underline",fontSize:"12px"}}>Sign out</button>
         </p>
       </div>
     </div>
@@ -1308,7 +1287,7 @@ function NotificationBell({ currentUser, activeCommunityId }) {
 
       {/* Info popover */}
       {showInfo && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl p-3 z-50 shadow-xl" style={{background:"#1e2340", border:"1px solid rgba(255,255,255,0.1)"}}>
+        <div style={{position:"absolute",right:0,top:"100%",marginTop:"6px",width:"200px",background:"#1e2340",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"16px",overflow:"hidden",zIndex:100,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
           {status === "granted" && <p className="text-white/70 text-xs">You'll get notified when hosts in your community go live. To turn off, check your browser notification settings.</p>}
           {status === "denied"  && <p className="text-white/70 text-xs">Notifications are blocked. Go to your browser settings → Site Settings → Notifications to allow them for this site.</p>}
         </div>
@@ -1585,19 +1564,19 @@ export default function App() {
       <div className="app-shell text-white" style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",overflowX:"hidden"}}>
         <header style={{position:"sticky",top:0,zIndex:40,background:"rgba(10,12,24,0.95)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
           <div style={{padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📡</span>
-              <span className="font-black text-white text-sm tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></span>
-              {liveNow>0&&<span className="bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full" style={{animation:"livePulse 1.2s ease-in-out infinite"}}>{liveNow} LIVE</span>}
+            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+              <span style={{fontSize:"18px"}}>📡</span>
+              <span style={{fontWeight:900,color:"#fff",fontSize:"14px",letterSpacing:"-0.3px"}}>LiveSupport <span style={{color:"#fbbf24"}}>Scheduler</span></span>
+              {liveNow>0&&<span style={{background:"#ef4444",color:"#fff",fontSize:"10px",fontWeight:900,padding:"2px 7px",borderRadius:"20px",animation:"livePulse 1.2s ease-in-out infinite"}}>{liveNow} LIVE</span>}
             </div>
-            <div className="flex items-center gap-2">
+            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
               <NotificationBell currentUser={currentUser} activeCommunityId={activeCommunityId} />
               <UserMenu currentUser={currentUser} onLogout={handleLogout} onManage={handleManageSubscription} />
             </div>
           </div>
         </header>
 
-        <main className="w-full px-4 py-5 pb-28" style={{overflowX:"hidden"}}>
+        <main style={{width:"100%",padding:"16px 16px 112px",overflowX:"hidden",boxSizing:"border-box"}}>
           {view===VIEWS.DASHBOARD && (
             <DashboardView
               schedules={schedules}
@@ -1640,7 +1619,7 @@ export default function App() {
           )}
 
           {view===VIEWS.ADMIN&&myLeaderCommunities.length>0&&(
-            <div className="space-y-6">
+            <div style={{display:"flex",flexDirection:"column",gap:"24px"}}>
               {myLeaderCommunities.map(community => (
                 <GroupAdminPanel
                   key={community.id}
