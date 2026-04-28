@@ -14,7 +14,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS = {
   UPCOMING:  "Upcoming",
