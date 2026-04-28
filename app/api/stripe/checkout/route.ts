@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
   	},
       ],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/`,
+      cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/?payment=cancelled`,
       metadata: { supabase_user_id: userId },
       subscription_data: {
         metadata: { supabase_user_id: userId },
