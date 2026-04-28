@@ -175,8 +175,16 @@ const SEED_SIGNUPS = [
 
 // font-size kept at base (16px equiv) to prevent iOS auto-zoom on focus
 const inputCls = "w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-400";
-const inputStyle = { fontSize:"16px", minWidth:0, width:"100%" };
+const inputStyle = { fontSize:"16px", minWidth:0, width:"100%", boxSizing:"border-box" as const };
 const labelCls = "text-white/70 text-xs font-semibold block mb-1";
+// Fully inline versions used wherever Tailwind is unreliable
+const IS = {
+  input: {width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"13px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box" as const,display:"block"},
+  label: {color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"},
+  card:  {background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column" as const,gap:"14px"},
+  btn:   {width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"},
+  btnSm: {background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px 14px",cursor:"pointer"},
+};
 
 function Badge({ status }) {
   return (
@@ -240,37 +248,42 @@ function AuthScreen({ users, onLogin, onRegister }) {
   const submit = tab === "login" ? handleLogin : handleRegister;
 
   return (
-    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full" style={{maxWidth:"420px"}}>
-        <div className="text-center mb-8">
-          <p className="text-5xl mb-3">📡</p>
-          <h1 className="text-white font-black text-2xl tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></h1>
-          <p className="text-white/40 text-sm mt-1">Sign in or create an account</p>
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",width:"100%",boxSizing:"border-box"}}>
+      <div style={{width:"100%",maxWidth:"420px"}}>
+        <div style={{textAlign:"center",marginBottom:"32px"}}>
+          <p style={{fontSize:"48px",marginBottom:"12px"}}>📡</p>
+          <h1 style={{color:"#fff",fontWeight:900,fontSize:"24px",margin:0}}>LiveSupport <span style={{color:"#fbbf24"}}>Scheduler</span></h1>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",marginTop:"6px"}}>Sign in or create an account</p>
         </div>
-        <div className="flex bg-white/10 rounded-xl p-1 mb-5">
+        <div style={{display:"flex",background:"rgba(255,255,255,0.1)",borderRadius:"12px",padding:"4px",marginBottom:"20px"}}>
           {[["login","Sign In"],["register","Create Account"]].map(([t,label]) => (
             <button key={t} onClick={() => { setTab(t); setError(""); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${tab===t?"bg-amber-400 text-gray-900":"text-white/60"}`}>
+              style={{flex:1,padding:"10px 0",borderRadius:"9px",fontSize:"14px",fontWeight:700,border:"none",cursor:"pointer",
+                background:tab===t?"#fbbf24":"transparent",color:tab===t?"#1c1400":"rgba(255,255,255,0.6)"}}>
               {label}
             </button>
           ))}
         </div>
-        <div className="rounded-2xl p-5 space-y-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-          {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
+        <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"24px",display:"flex",flexDirection:"column",gap:"16px"}}>
+          {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
           <div>
-            <label className={labelCls}>Username</label>
-            <input value={username} onChange={e=>setUsername(e.target.value)} placeholder="your_username" className={inputCls} onKeyDown={e=>e.key==="Enter"&&submit()} />
+            <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Username</label>
+            <input value={username} onChange={e=>setUsername(e.target.value)} placeholder="your_username"
+              style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box"}}
+              onKeyDown={e=>e.key==="Enter"&&submit()} />
           </div>
           <div>
-            <label className={labelCls}>Password</label>
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" className={inputCls} onKeyDown={e=>e.key==="Enter"&&submit()} />
+            <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Password</label>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"
+              style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box"}}
+              onKeyDown={e=>e.key==="Enter"&&submit()} />
           </div>
-
-          <button onClick={submit} className="w-full bg-amber-400 hover:bg-amber-300 text-gray-900 font-black text-sm rounded-xl py-3 transition-colors">
+          <button onClick={submit}
+            style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"15px",cursor:"pointer"}}>
             {tab==="login" ? "Sign In 🚀" : "Create Account ✨"}
           </button>
           {tab==="login" && (
-            <p className="text-white/20 text-xs text-center pt-1">
+            <p style={{color:"rgba(255,255,255,0.2)",fontSize:"11px",textAlign:"center",margin:0}}>
               Demo — DoomLeader/doom123 · StarryNight/pass1 · AshleyLeader/ashley123
             </p>
           )}
@@ -279,6 +292,7 @@ function AuthScreen({ users, onLogin, onRegister }) {
     </div>
   );
 }
+
 
 // ─── Post-Register Screen ─────────────────────────────────────────────────────
 // Shown immediately after account creation so the user can join or create a community.
@@ -604,32 +618,30 @@ function SignupForm({ occurrenceId, scheduleId, currentUser, onSubmit }) {
   );
 
   return (
-    <div className="rounded-2xl p-4 space-y-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-      <h3 className="text-white font-black text-base">Sign Up to Support</h3>
-      <p className="text-white/40 text-xs">⚠️ Gift amounts are for planning only — no payment is taken here.</p>
-      {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
+    <div style={IS.card}>
+      <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Sign Up to Support</h3>
+      <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:0}}>⚠️ Gift amounts are for planning only — no payment is taken here.</p>
+      {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
       <div>
-        <label className={labelCls}>Your Name *</label>
-        <input value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="How you want to appear" className={inputCls} />
+        <label style={IS.label}>Your Name *</label>
+        <input value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="How you want to appear" style={IS.input} />
       </div>
       <div>
-        <label className={labelCls}>Your Username (optional)</label>
-        <input value={supporterUsername} onChange={e=>setSupporterUsername(e.target.value)} placeholder="@handle" className={inputCls} />
+        <label style={IS.label}>Your Username (optional)</label>
+        <input value={supporterUsername} onChange={e=>setSupporterUsername(e.target.value)} placeholder="@handle" style={IS.input} />
       </div>
       <div>
-        <label className={labelCls}>Planned Gift Amount — <span className="text-amber-400">optional, no charge</span></label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm">$</span>
-          <input type="number" min="0" value={gift} onChange={e=>setGift(e.target.value)} placeholder="0.00" className={`${inputCls} pl-7`} />
+        <label style={IS.label}>Planned Gift Amount — <span style={{color:"#fbbf24"}}>optional, no charge</span></label>
+        <div style={{position:"relative"}}>
+          <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",color:"rgba(255,255,255,0.4)",fontSize:"15px"}}>$</span>
+          <input type="number" min="0" value={gift} onChange={e=>setGift(e.target.value)} placeholder="0.00" style={{...IS.input,paddingLeft:"32px"}} />
         </div>
       </div>
       <div>
-        <label className={labelCls}>Hype message (optional)</label>
-        <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="Drop some hype! 🎉" rows={2} className={`${inputCls} resize-none`} />
+        <label style={IS.label}>Hype message (optional)</label>
+        <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="Drop some hype! 🎉" rows={2} style={{...IS.input,resize:"none"}} />
       </div>
-      <button onClick={submit} className="w-full bg-amber-400 hover:bg-amber-300 text-gray-900 font-black text-sm rounded-xl py-3 transition-colors">
-        Sign Me Up 🙌
-      </button>
+      <button onClick={submit} style={IS.btn}>Sign Me Up 🙌</button>
     </div>
   );
 }
@@ -843,49 +855,49 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
         <button onClick={onCancel} className="text-white/50 hover:text-white text-sm">Cancel</button>
       </div>
       {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
-      <div className="rounded-2xl p-4 space-y-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-        <p className="text-white/50 text-xs">Your username <span className="text-amber-400 font-semibold">@{username}</span> is shown as host automatically.</p>
+      <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
+        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",margin:0}}>Your username <span style={{color:"#fbbf24",fontWeight:700}}>@{username}</span> is shown as host automatically.</p>
         {myGroups.length > 0 && (
           <div>
-            <label className={labelCls}>Community *</label>
-            <select value={form.communityId} onChange={e=>ch("communityId",e.target.value)} className={`${inputCls} appearance-none`}>
+            <label style={IS.label}>Community *</label>
+            <select value={form.communityId} onChange={e=>ch("communityId",e.target.value)} style={{...IS.input,appearance:"none" as any}}>
               <option value="">Select a community…</option>
               {myGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
           </div>
         )}
-        {myGroups.length === 0 && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2">You must join a community before posting a schedule.</p>}
+        {myGroups.length === 0 && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>You must join a community before posting a schedule.</p>}
         <div>
-          <label className={labelCls}>Platform *</label>
-          <input value={form.platform} onChange={e=>ch("platform",e.target.value)} placeholder="TikTok, YouTube, Kick, Twitch…" className={inputCls} />
+          <label style={IS.label}>Platform *</label>
+          <input value={form.platform} onChange={e=>ch("platform",e.target.value)} placeholder="TikTok, YouTube, Kick, Twitch…" style={IS.input} />
         </div>
         <div>
-          <label className={labelCls}>Days of Week * <span className="text-white/30 font-normal">(tap to select)</span></label>
-          <div className="grid grid-cols-7 gap-1">
+          <label style={{...IS.label,marginBottom:"10px"}}>Days of Week * <span style={{color:"rgba(255,255,255,0.3)",fontWeight:400}}>(tap to select)</span></label>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"4px"}}>
             {DAYS.map((day,i) => (
               <button key={i} type="button" onClick={() => toggleDay(i)}
-                className={`py-2.5 rounded-lg text-xs font-bold transition-colors text-center ${form.daysOfWeek.includes(i)?"bg-amber-400 text-gray-900":"bg-white/10 text-white/60 hover:bg-white/20"}`}>
+                style={{padding:"10px 0",borderRadius:"8px",fontSize:"11px",fontWeight:700,border:"none",cursor:"pointer",textAlign:"center",
+                  background:form.daysOfWeek.includes(i)?"#fbbf24":"rgba(255,255,255,0.1)",
+                  color:form.daysOfWeek.includes(i)?"#1c1400":"rgba(255,255,255,0.6)"}}>
                 {day.slice(0,2)}
               </button>
             ))}
           </div>
         </div>
-        <div className="space-y-3">
-          <div>
-            <label className={labelCls}>Start Time *</label>
-            <input type="time" value={form.startTime} onChange={e=>ch("startTime",e.target.value)} className={inputCls} style={inputStyle} />
-          </div>
-          <div>
-            <label className={labelCls}>End Time *</label>
-            <input type="time" value={form.endTime} onChange={e=>ch("endTime",e.target.value)} className={inputCls} style={inputStyle} />
-          </div>
+        <div>
+          <label style={IS.label}>Start Time *</label>
+          <input type="time" value={form.startTime} onChange={e=>ch("startTime",e.target.value)} style={IS.input} />
         </div>
         <div>
-          <label className={labelCls}>Notes / Theme (optional)</label>
-          <textarea value={form.notes} onChange={e=>ch("notes",e.target.value)} placeholder="What's the vibe every week?" rows={2} className={`${inputCls} resize-none`} />
+          <label style={IS.label}>End Time *</label>
+          <input type="time" value={form.endTime} onChange={e=>ch("endTime",e.target.value)} style={IS.input} />
+        </div>
+        <div>
+          <label style={IS.label}>Notes / Theme (optional)</label>
+          <textarea value={form.notes} onChange={e=>ch("notes",e.target.value)} placeholder="What's the vibe every week?" rows={2} style={{...IS.input,resize:"none"}} />
         </div>
       </div>
-      <button onClick={save} className="w-full bg-amber-400 hover:bg-amber-300 text-gray-900 font-black text-sm rounded-xl py-3 transition-colors">
+      <button onClick={save} style={IS.btn}>
         {initial?"Save Changes":"Save My Schedule 🎬"}
       </button>
     </div>
