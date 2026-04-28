@@ -1586,6 +1586,7 @@ export default function App() {
   const [view,         setView]         = useState(VIEWS.DASHBOARD);
   const [activeId,    setActiveId]    = useState(null);
   const [activeCommunityId, setActiveCommunityId] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(()=>setTick(n=>n+1), 30000); return ()=>clearInterval(t); }, []);
@@ -1610,9 +1611,125 @@ export default function App() {
   // Is the current user a leader of ANY community?
   const myLeaderCommunities = communities.filter(c=>c.leaderId===currentUser?.id);
 
+useEffect(() => {
+
+  if (currentUser && !activeCommunityId) {
+
+    setActiveCommunityId(currentUser.communityIds?.[0] ?? null);
+
+  }
+
+}, [currentUser]);
+
+async function loadUserFromSupabase(authUser) {
+
+  if (!authUser) return null;
+
+  let { data: profile, error: profileError } = await supabase
+
+    .from("profiles")
+
+    .select("id, username, has_paid, paid_at")
+
+    .eq("id", authUser.id)
+
+    .maybeSingle();
+
+  if (profileError) {
+
+    console.error("Profile load error:", profileError);
+
+    return null;
+
+  }
+
+  if (!profile) {
+
+    const fallbackUsername =
+
+      authUser.user_metadata?.username ||
+
+      authUser.email?.split("@")[0] ||
+
+      "user";
+
+    const { data: createdProfile, error: createProfileError } = await supabase
+
+      .from("profiles")
+
+      .insert({ id: authUser.id, username: fallbackUsername })
+
+      .select("id, username, has_paid, paid_at")
+
+      .single();
+
+    if (createProfileError) {
+
+      console.error("Profile create error:", createProfileError);
+
+      return null;
+
+    }
+
+    profile = createdProfile;
+
+  }
+
+  const { data: memberships, error: membershipError } = await supabase
+
+    .from("community_members")
+
+    .select("community_id")
+
+    .eq("user_id", authUser.id);
+
+  if (membershipError) console.error("Membership load error:", membershipError);
+
+  const appUser = {
+
+    id: profile.id,
+
+    username: profile.username,
+
+    communityIds: (memberships || []).map(m => m.community_id),
+
+    hasPaid: profile.has_paid ?? false,
+
+    paidAt: profile.paid_at ?? null,
+
+  };
+
+  setCurrentUser(appUser);
+
+  setUsers(p =>
+
+    p.find(u => u.id === appUser.id)
+
+      ? p.map(u => u.id === appUser.id ? appUser : u)
+
+      : [appUser, ...p]
+
+  );
+
+  return appUser;
+
+}
+
   // ── Auth ──
-  function handleLogin(user)          { setCurrentUser(user); }
-  function handleLogout()             { setCurrentUser(null); setView(VIEWS.DASHBOARD); setActiveCommunityId(null); }
+async function handleLogin({ email, password }) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { error: error.message };
+  if (data.user) await loadUserFromSupabase(data.user);
+  return { error: null };
+}
+
+async function handleLogout() {
+  await supabase.auth.signOut();
+  setCurrentUser(null);
+  setPendingUser(null);
+  setView(VIEWS.DASHBOARD);
+  setActiveCommunityId(null);
+}
 
   function handleShowHelp() {
     setView(VIEWS.HELP);
@@ -1634,11 +1751,27 @@ export default function App() {
       alert("Could not open billing portal. Please try again.");
     }
   }
-  function handleRegister(u) {
-    // [DB INTEGRATION] Insert user row in DB, then show post-register flow
-    setUsers(p=>[...p,u]);
-    setPendingUser(u); // triggers PostRegisterScreen
+  async function handleRegister({ email, username, password }) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { username } },
+  });
+
+  if (error) return { error: error.message };
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .insert({ id: data.user.id, username });
+
+  if (profileError && !profileError.message?.toLowerCase().includes("duplicate")) {
+    return { error: profileError.message };
   }
+
+  const appUser = await loadUserFromSupabase(data.user);
+  if (appUser) setPendingUser(appUser);
+  return { error: null };
+}
 
   function handleCreateCommunity(community) {
     // [DB INTEGRATION] INSERT into communities + community_members tables
