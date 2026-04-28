@@ -14,7 +14,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS = {
   UPCOMING:  "Upcoming",
@@ -179,9 +179,9 @@ const inputStyle = { fontSize:"16px", minWidth:0, width:"100%", boxSizing:"borde
 const labelCls = "text-white/70 text-xs font-semibold block mb-1";
 // Fully inline versions used wherever Tailwind is unreliable
 const IS = {
-  input: {width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"13px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box" as const,display:"block"},
+  input: {width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"13px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",display:"block"},
   label: {color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"},
-  card:  {background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column" as const,gap:"14px"},
+  card:  {background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px"},
   btn:   {width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"},
   btnSm: {background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px 14px",cursor:"pointer"},
 };
@@ -860,7 +860,7 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
         {myGroups.length > 0 && (
           <div>
             <label style={IS.label}>Community *</label>
-            <select value={form.communityId} onChange={e=>ch("communityId",e.target.value)} style={{...IS.input,appearance:"none" as any}}>
+            <select value={form.communityId} onChange={e=>ch("communityId",e.target.value)} style={{...IS.input,appearance:"none"}}>
               <option value="">Select a community…</option>
               {myGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
