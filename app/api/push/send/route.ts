@@ -1,23 +1,44 @@
-import webpush from "web-push";
+/**
+ * app/api/push/send/route.ts
+ * Sends a web push notification to all subscribers in a community.
+ *
+ * Setup:
+ *   npm install web-push
+ *   npm install --save-dev @types/web-push
+ *   npx web-push generate-vapid-keys   ← run once, save to .env.local
+ *
+ * Required env vars:
+ *   NEXT_PUBLIC_VAPID_PUBLIC_KEY=BE...
+ *   VAPID_PRIVATE_KEY=...
+ *   VAPID_EMAIL=mailto:you@yourdomain.com
+ */
+
 import { NextRequest, NextResponse } from "next/server";
+import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function initWebPush() {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { communityId, title, body, url } = await req.json();
 
-    const { data: subs } = await supabase
+    initWebPush();
+
+    const { data: subs } = await getSupabase()
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth_key")
       .eq("community_id", communityId);
