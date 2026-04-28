@@ -16,14 +16,18 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-04-22.dahlia",
-});
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2026-04-22.dahlia",
+  });
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the user's Stripe customer ID from Supabase
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await getSupabase()
       .from("profiles")
       .select("stripe_customer_id, has_paid")
       .eq("id", userId)
@@ -48,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create a Stripe Customer Portal session
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer:   profile.stripe_customer_id,
       return_url: process.env.NEXT_PUBLIC_APP_URL!, // sends them back to your app after
     });

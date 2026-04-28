@@ -21,14 +21,18 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-04-22.dahlia",
-});
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2026-04-22.dahlia",
+  });
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(req: NextRequest) {
   const body      = await req.text();
@@ -36,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = getStripe().webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err.message);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
       const userId  = session.metadata?.supabase_user_id;
       if (!userId) break;
 
-      await supabase.from("profiles").update({
+      await getSupabase().from("profiles").update({
         has_paid:        true,
         paid_at:         new Date().toISOString(),
         subscription_id: session.subscription as string,
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
       const userId = sub.metadata?.supabase_user_id;
       if (!userId) break;
 
-      await supabase.from("profiles").update({
+      await getSupabase().from("profiles").update({
         has_paid:        false,
         subscription_id: null,
       }).eq("id", userId);
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
       if (!userId) break;
 
       const active = sub.status === "active" || sub.status === "trialing";
-      await supabase.from("profiles").update({ has_paid: active }).eq("id", userId);
+      await getSupabase().from("profiles").update({ has_paid: active }).eq("id", userId);
       break;
     }
   }
