@@ -1905,6 +1905,32 @@ async function loadUserFromSupabase(authUser) {
         return [...prev, ...fresh];
       });
     }
+
+    const { data: loadedSchedules, error: schedulesError } = await supabase
+      .from("schedules")
+      .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+      .in("community_id", communityIds);
+
+    if (schedulesError) {
+      console.warn("Schedules load warning:", schedulesError.message || schedulesError);
+    } else {
+      const mappedSchedules = (loadedSchedules || []).map(s => ({
+        id: s.id,
+        userId: s.user_id,
+        communityId: s.community_id,
+        hostUsername: s.host_username,
+        platform: s.platform,
+        daysOfWeek: s.days_of_week || [],
+        startTime: s.start_time ? String(s.start_time).slice(0, 5) : "12:00",
+        endTime: s.end_time ? String(s.end_time).slice(0, 5) : "13:00",
+        notes: s.notes || "",
+        manualStatus: s.manual_status,
+        createdAt: s.created_at,
+        updatedAt: s.updated_at,
+      }));
+
+      setSchedules(mappedSchedules);
+    }
   }
 
   const appUser = {
@@ -2196,9 +2222,78 @@ async function handleLogout() {
   }
 
   // ── Schedules ──
-  function handleSaveSchedule(s)      { setSchedules(p=>p.find(x=>x.id===s.id)?p.map(x=>x.id===s.id?s:x):[s,...p]); }
-  function handleGoLive(id) {
-    setSchedules(p=>p.map(s=>s.id===id?{...s,manualStatus:STATUS.LIVE_NOW}:s));
+  async function handleSaveSchedule(s) {
+    const payload = {
+      user_id: s.userId,
+      community_id: s.communityId,
+      host_username: s.hostUsername,
+      platform: s.platform,
+      days_of_week: s.daysOfWeek || [],
+      start_time: s.startTime,
+      end_time: s.endTime,
+      notes: s.notes || "",
+      manual_status: s.manualStatus || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: existingSchedule } = await supabase
+      .from("schedules")
+      .select("id")
+      .eq("user_id", s.userId)
+      .eq("community_id", s.communityId)
+      .maybeSingle();
+
+    let savedSchedule;
+
+    if (existingSchedule?.id) {
+      const { data, error } = await supabase
+        .from("schedules")
+        .update(payload)
+        .eq("id", existingSchedule.id)
+        .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+        .single();
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      savedSchedule = data;
+    } else {
+      const { data, error } = await supabase
+        .from("schedules")
+        .insert(payload)
+        .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+        .single();
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      savedSchedule = data;
+    }
+
+    const mappedSchedule = {
+      id: savedSchedule.id,
+      userId: savedSchedule.user_id,
+      communityId: savedSchedule.community_id,
+      hostUsername: savedSchedule.host_username,
+      platform: savedSchedule.platform,
+      daysOfWeek: savedSchedule.days_of_week || [],
+      startTime: savedSchedule.start_time ? String(savedSchedule.start_time).slice(0, 5) : "12:00",
+      endTime: savedSchedule.end_time ? String(savedSchedule.end_time).slice(0, 5) : "13:00",
+      notes: savedSchedule.notes || "",
+      manualStatus: savedSchedule.manual_status,
+      createdAt: savedSchedule.created_at,
+      updatedAt: savedSchedule.updated_at,
+    };
+
+    setSchedules(p=>p.find(x=>x.id===mappedSchedule.id)?p.map(x=>x.id===mappedSchedule.id?mappedSchedule:x):[mappedSchedule,...p]);
+  }
+
+  async function handleGoLive(id) {
+    await handleStatusChange(id, STATUS.LIVE_NOW);
     // [DB INTEGRATION — PUSH] Trigger push notification to community members
     // const sched = schedules.find(s => s.id === id);
     // await fetch("/api/push/send", {
@@ -2212,7 +2307,20 @@ async function handleLogout() {
     //   }),
     // });
   }
-  function handleStatusChange(id, st) { setSchedules(p=>p.map(s=>s.id===id?{...s,manualStatus:st}:s)); }
+
+  async function handleStatusChange(id, st) {
+    const { error } = await supabase
+      .from("schedules")
+      .update({ manual_status: st, updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setSchedules(p=>p.map(s=>s.id===id?{...s,manualStatus:st}:s));
+  }
 
   // ── Signups ──
   function handleSignup(data)         { setSignups(p=>[data,...p]); }
