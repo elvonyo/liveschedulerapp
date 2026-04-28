@@ -22,16 +22,13 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
+  apiVersion: "2026-04-22.dahlia",
 });
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-// Must export config to disable body parsing (Stripe needs raw body for signature verification)
-export const config = { api: { bodyParser: false } };
 
 export async function POST(req: NextRequest) {
   const body      = await req.text();
