@@ -1479,23 +1479,43 @@ function PaywallScreen({ currentUser, onPaymentSuccess }) {
   const [error,   setError]   = useState("");
 
   async function handleSubscribe() {
+    if (!currentUser?.id) {
+      setError("User account was not found. Please sign out and sign back in.");
+      return;
+    }
+
     setLoading(true);
     setError("");
-    try {
-      // [DB INTEGRATION] Call your API route to create a Stripe Checkout session
-      // const res = await fetch("/api/stripe/checkout", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ userId: currentUser.id, username: currentUser.username }),
-      // });
-      // const { url } = await res.json();
-      // window.location.href = url; // redirect to Stripe Checkout
 
-      // ── MOCK for demo — simulates successful payment ──
-      await new Promise(r => setTimeout(r, 1500));
-      onPaymentSuccess();
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id, username: currentUser.username }),
+      });
+
+      const raw = await res.text();
+      let data = {};
+
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch (parseError) {
+        console.error("Stripe checkout JSON parse error:", parseError, raw);
+        throw new Error("Stripe checkout returned an invalid response.");
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || data.message || "Could not start Stripe checkout.");
+      }
+
+      if (!data.url) {
+        throw new Error("Stripe checkout did not return a checkout URL.");
+      }
+
+      window.location.href = data.url;
     } catch (e) {
-      setError("Something went wrong. Please try again.");
+      console.error("Checkout error:", e);
+      setError(e.message || "Something went wrong. Please try again.");
       setLoading(false);
     }
   }
