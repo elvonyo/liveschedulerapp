@@ -174,7 +174,8 @@ const SEED_SIGNUPS = [
 // ─── Shared UI Atoms ───────────────────────────────────────────────────────────
 
 // font-size kept at base (16px equiv) to prevent iOS auto-zoom on focus
-const inputCls = "w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-amber-400";
+const inputCls = "w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-400";
+const inputStyle = { fontSize:"16px", minWidth:0, width:"100%" };
 const labelCls = "text-white/70 text-xs font-semibold block mb-1";
 
 function Badge({ status }) {
@@ -239,7 +240,7 @@ function AuthScreen({ users, onLogin, onRegister }) {
   const submit = tab === "login" ? handleLogin : handleRegister;
 
   return (
-    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
       <div className="w-full" style={{maxWidth:"420px"}}>
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">📡</p>
@@ -342,7 +343,7 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Join flow ──
   if (step === "join") return (
-    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
       <div className="w-full" style={{maxWidth:"420px"}}>
         <button onClick={() => { setStep("choice"); setError(""); }} className="text-white/50 hover:text-white text-sm font-semibold mb-6 flex items-center gap-1">← Back</button>
         <h2 className="text-white font-black text-2xl mb-1">Join a Community</h2>
@@ -368,7 +369,7 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Create flow ──
   if (step === "create") return (
-    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
       <div className="w-full" style={{maxWidth:"420px"}}>
         <button onClick={() => { setStep("choice"); setError(""); }} className="text-white/50 hover:text-white text-sm font-semibold mb-6 flex items-center gap-1">← Back</button>
         <h2 className="text-white font-black text-2xl mb-1">Create a Community</h2>
@@ -394,7 +395,7 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Initial choice ──
   return (
-    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
       <div className="w-full" style={{maxWidth:"420px"}}>
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">👋</p>
@@ -870,8 +871,14 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
           </div>
         </div>
         <div className="space-y-3">
-          <div><label className={labelCls}>Start Time *</label><input type="time" value={form.startTime} onChange={e=>ch("startTime",e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>End Time *</label><input type="time" value={form.endTime} onChange={e=>ch("endTime",e.target.value)} className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>Start Time *</label>
+            <input type="time" value={form.startTime} onChange={e=>ch("startTime",e.target.value)} className={inputCls} style={inputStyle} />
+          </div>
+          <div>
+            <label className={labelCls}>End Time *</label>
+            <input type="time" value={form.endTime} onChange={e=>ch("endTime",e.target.value)} className={inputCls} style={inputStyle} />
+          </div>
         </div>
         <div>
           <label className={labelCls}>Notes / Theme (optional)</label>
@@ -1121,7 +1128,7 @@ function PaywallScreen({ currentUser, onPaymentSuccess }) {
   }
 
   return (
-    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+    <div className="app-shell flex flex-col items-center justify-center px-4 py-8 min-h-screen" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
       <div className="w-full" style={{maxWidth:"420px"}}>
         {/* Logo */}
         <div className="text-center mb-8">
@@ -1487,6 +1494,37 @@ export default function App() {
   function handleUpdateSignup(updated){ setSignups(p=>p.map(sg=>sg.id===updated.id?updated:sg)); }
   function handleRemoveSignup(id)     { setSignups(p=>p.filter(sg=>sg.id!==id)); }
 
+  if (!currentUser && !pendingUser) return (
+    <>
+      <GlobalStyles />
+      <AuthScreen users={users} onLogin={handleLogin} onRegister={handleRegister} />
+    </>
+  );
+
+  // Paywall gate — show immediately after registration OR login if not paid
+  // [DB INTEGRATION] currentUser.hasPaid comes from profiles.has_paid in Supabase
+  const userToCheck = currentUser || pendingUser;
+  if (userToCheck && !userToCheck.hasPaid) return (
+    <>
+      <GlobalStyles />
+      <PaywallScreen
+        currentUser={userToCheck}
+        onPaymentSuccess={() => {
+          // Mark as paid then continue to community selection (for new users) or dashboard (for returning)
+          // [DB INTEGRATION] Stripe webhook flips has_paid in DB — here we update local state
+          const updated = { ...userToCheck, hasPaid: true, paidAt: new Date().toISOString() };
+          setUsers(p => p.map(u => u.id === userToCheck.id ? updated : u));
+          if (pendingUser) {
+            setPendingUser(updated); // still needs community selection
+          } else {
+            setCurrentUser(updated);
+          }
+        }}
+      />
+    </>
+  );
+
+  // Community selection — shown after payment for new registrations
   if (pendingUser) return (
     <>
       <GlobalStyles />
@@ -1496,32 +1534,6 @@ export default function App() {
         onCreateCommunity={handleCreateCommunity}
         onJoinCommunity={handleJoinAfterRegister}
         onSkip={handleSkipCommunity}
-      />
-    </>
-  );
-
-  if (!currentUser) return (
-    <>
-      <GlobalStyles />
-      <AuthScreen users={users} onLogin={handleLogin} onRegister={handleRegister} />
-    </>
-  );
-
-  // Paywall gate — block access until subscription is active
-  // [DB INTEGRATION] currentUser.hasPaid comes from profiles.has_paid in Supabase,
-  // refreshed after Stripe webhook confirms payment.
-  if (!currentUser.hasPaid) return (
-    <>
-      <GlobalStyles />
-      <PaywallScreen
-        currentUser={currentUser}
-        onPaymentSuccess={() => {
-          // [DB INTEGRATION] After real Stripe payment, webhook flips has_paid in DB.
-          // Here we update local state to let the user through immediately after mock payment.
-          const updated = { ...currentUser, hasPaid: true, paidAt: new Date().toISOString() };
-          setUsers(p => p.map(u => u.id === currentUser.id ? updated : u));
-          setCurrentUser(updated);
-        }}
       />
     </>
   );
@@ -1538,9 +1550,9 @@ export default function App() {
   return (
     <>
       <GlobalStyles />
-      <div id="app-root" className="min-h-screen text-white" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",fontFamily:"'DM Sans','Segoe UI',sans-serif",overflowX:"hidden",width:"100%"}}>
+      <div className="app-shell text-white" style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",overflowX:"hidden"}}>
         <header className="sticky top-0 z-40 backdrop-blur-lg" style={{background:"rgba(10,12,24,0.93)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-          <div className="w-full mx-auto px-4 py-3 flex items-center justify-between" style={{maxWidth:"480px"}}>
+          <div className="w-full px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg">📡</span>
               <span className="font-black text-white text-sm tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></span>
@@ -1553,7 +1565,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="w-full mx-auto px-4 py-5 pb-28" style={{overflowX:"hidden", maxWidth:"480px"}}>
+        <main className="w-full px-4 py-5 pb-28" style={{overflowX:"hidden"}}>
           {view===VIEWS.DASHBOARD && (
             <DashboardView
               schedules={schedules}
@@ -1614,7 +1626,7 @@ export default function App() {
         </main>
 
         <nav className="fixed bottom-0 left-0 right-0 z-40" style={{background:"rgba(10,12,24,0.97)",borderTop:"1px solid rgba(255,255,255,0.07)"}}>
-          <div className="w-full mx-auto flex" style={{maxWidth:"480px"}}>
+          <div className="w-full flex">
             {navItems.map(item => (
               <button key={item.key} onClick={()=>setView(item.key)}
                 className={`flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-bold transition-colors ${view===item.key?"text-amber-400":"text-white/35 hover:text-white/60"}`}>
@@ -1655,12 +1667,14 @@ function GlobalStyles() {
       />
       <style>{[
         "*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }",
-        "html, body { width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; }",
-        "@media (min-width: 520px) { body { background: #060810; } #app-root { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; } }",
-        "input, textarea, select, button { font-family: inherit; font-size: inherit; max-width: 100%; }",
-        "input[type=time], input[type=date] { min-width: 0; width: 100%; }",
+        "html { font-size: 16px; }",
+        "body { width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; background: #0a0c18; }",
+        "input, textarea, select, button { font-family: inherit; font-size: 16px; max-width: 100%; }",
+        "input[type=time], input[type=date] { min-width: 0; width: 100%; font-size: 16px; }",
         "input[type=date]::-webkit-calendar-picker-indicator, input[type=time]::-webkit-calendar-picker-indicator { filter: invert(0.5); }",
         "select option { background: #16192e; color: white; }",
+        ".app-shell { width: 100%; max-width: 500px; margin: 0 auto; min-height: 100vh; background: linear-gradient(180deg,#0d0f1c,#0a0c18); position: relative; }",
+        "@media (min-width: 520px) { body { background: #060810; } .app-shell { box-shadow: 0 0 80px rgba(0,0,0,0.7); } }",
         ".line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }",
         "@keyframes livePulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.45; transform:scale(1.35); } }",
         "@keyframes spin { to { transform: rotate(360deg); } }",
