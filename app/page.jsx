@@ -1,4 +1,5 @@
 "use client";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 /**
@@ -13,7 +14,6 @@ import { supabase } from "../lib/supabaseClient";
  * [DB INTEGRATION] tags mark every spot to swap in Supabase / Firebase / Auth calls.
  */
 
-import { useState, useMemo, useEffect } from "react";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
