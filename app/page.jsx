@@ -2480,6 +2480,7 @@ if (!currentUser && !pendingUser) return (
       <GlobalStyles />
       <PaywallScreen
         currentUser={userToCheck}
+        onLogout={handleLogout}
         onPaymentSuccess={() => {
           // Mark as paid then continue to community selection (for new users) or dashboard (for returning)
           // [DB INTEGRATION] Stripe webhook flips has_paid in DB — here we update local state
