@@ -1335,12 +1335,179 @@ function NotificationBell({ currentUser, activeCommunityId }) {
   );
 }
 
+// ─── Help View (FAQ, How To, Contact) ─────────────────────────────────────────
+
+const FAQ_ITEMS = [
+  {
+    q: "What is a planned gift amount?",
+    a: "It's just a planning tool — entering an amount does NOT charge you anything. It helps hosts know roughly how much support to expect so they can plan their live sessions. No payment is ever processed in this app.",
+  },
+  {
+    q: "How do I join a community?",
+    a: "Ask your community leader for their invite code. Then tap your avatar → Join a Community and enter the code. You can join multiple communities.",
+  },
+  {
+    q: "How do I get an invite code for my community?",
+    a: "If you're the leader, your invite code is shown in the Admin panel under your community name. Share it via text, Discord, or however you communicate with your group.",
+  },
+  {
+    q: "Why am I not seeing any lives on the dashboard?",
+    a: "Make sure you've joined a community and have the right community tab selected at the top of the dashboard. Lives only show for communities you belong to.",
+  },
+  {
+    q: "How does Live Now work?",
+    a: "When a host's scheduled time window starts, their card automatically flips to Live Now — no one has to do anything. Hosts can also tap Go Live Early if they start before their scheduled time.",
+  },
+  {
+    q: "How do I cancel my subscription?",
+    a: "Tap your avatar in the top right → Manage Subscription. This opens Stripe's billing portal where you can cancel, update your payment method, or view invoices. You can cancel anytime.",
+  },
+  {
+    q: "Will I lose access immediately if I cancel?",
+    a: "No — you keep access until the end of your current billing period.",
+  },
+  {
+    q: "Can I sign up to support a live without entering a gift amount?",
+    a: "Yes, the gift amount is completely optional. You can sign up with just your name and nothing else.",
+  },
+];
+
+const HOWTO_ITEMS = [
+  {
+    title: "Set up your weekly schedule",
+    steps: [
+      "Tap My Schedule in the bottom nav.",
+      "Tap Set My Weekly Schedule.",
+      "Select your community, platform, days of the week, and start/end times.",
+      "Tap Save My Schedule — your live will now appear on the dashboard every week automatically.",
+    ],
+  },
+  {
+    title: "Share your invite code with supporters",
+    steps: [
+      "Tap your avatar → Admin (only visible to community leaders).",
+      "Your invite code is shown at the top of the Admin panel.",
+      "Share it however you like — text, Discord, TikTok bio, etc.",
+      "Supporters enter it when creating their account or via your avatar → Join a Community.",
+    ],
+  },
+  {
+    title: "Go live early or end a live",
+    steps: [
+      "Tap My Schedule in the bottom nav.",
+      "Under Live Controls, tap Go Live Early to flip your status to Live Now immediately.",
+      "Tap End Live when you're done, or Cancel This Week to hide your live for this week.",
+      "Tap Reset to Auto to let the schedule run automatically again.",
+    ],
+  },
+  {
+    title: "Sign up to support a host",
+    steps: [
+      "Find a live on the dashboard and tap View & Sign Up.",
+      "Fill in your name and optionally a planned gift amount (this does NOT charge you).",
+      "Tap Sign Me Up — you'll appear in the host's supporter list.",
+      "You can edit or remove your signup anytime by reopening the same live.",
+    ],
+  },
+];
+
+function HelpView({ onClose }) {
+  const [tab,        setTab]        = useState("faq");
+  const [openIndex,  setOpenIndex]  = useState(null);
+
+  const tabStyle = (t) => ({
+    flex:1, padding:"9px 0", borderRadius:"9px", fontSize:"13px", fontWeight:700,
+    border:"none", cursor:"pointer",
+    background: tab===t ? "#fbbf24" : "transparent",
+    color:       tab===t ? "#1c1400" : "rgba(255,255,255,0.55)",
+  });
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"20px",margin:0}}>Help</h2>
+        <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"14px",cursor:"pointer",fontWeight:700}}>✕ Close</button>
+      </div>
+
+      {/* Tab switcher */}
+      <div style={{display:"flex",background:"rgba(255,255,255,0.1)",borderRadius:"12px",padding:"4px",gap:"4px"}}>
+        <button style={tabStyle("faq")}     onClick={()=>setTab("faq")}>FAQ</button>
+        <button style={tabStyle("howto")}   onClick={()=>setTab("howto")}>How To</button>
+        <button style={tabStyle("contact")} onClick={()=>setTab("contact")}>Contact</button>
+      </div>
+
+      {/* ── FAQ ── */}
+      {tab === "faq" && (
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {FAQ_ITEMS.map((item, i) => (
+            <div key={i} style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"14px",overflow:"hidden"}}>
+              <button
+                onClick={() => setOpenIndex(openIndex===i ? null : i)}
+                style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",gap:"10px"}}>
+                <p style={{color:"#fff",fontWeight:700,fontSize:"13px",margin:0,flex:1}}>{item.q}</p>
+                <span style={{color:"#fbbf24",fontSize:"16px",flexShrink:0,lineHeight:1,transform:openIndex===i?"rotate(180deg)":"none",transition:"transform 0.2s"}}>›</span>
+              </button>
+              {openIndex === i && (
+                <div style={{padding:"0 16px 14px"}}>
+                  <p style={{color:"rgba(255,255,255,0.6)",fontSize:"13px",lineHeight:1.6,margin:0}}>{item.a}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── How To ── */}
+      {tab === "howto" && (
+        <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+          {HOWTO_ITEMS.map((item, i) => (
+            <div key={i} style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"14px",padding:"16px"}}>
+              <p style={{color:"#fbbf24",fontWeight:900,fontSize:"13px",margin:"0 0 10px"}}>
+                {i+1}. {item.title}
+              </p>
+              <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                {item.steps.map((step, j) => (
+                  <div key={j} style={{display:"flex",alignItems:"flex-start",gap:"10px"}}>
+                    <span style={{width:20,height:20,borderRadius:"50%",background:"rgba(251,191,36,0.2)",color:"#fbbf24",fontSize:"11px",fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>{j+1}</span>
+                    <p style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",lineHeight:1.5,margin:0}}>{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Contact ── */}
+      {tab === "contact" && (
+        <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+          <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"20px",textAlign:"center"}}>
+            <p style={{fontSize:"32px",marginBottom:"10px"}}>✉️</p>
+            <p style={{color:"#fff",fontWeight:900,fontSize:"16px",margin:"0 0 6px"}}>Get in Touch</p>
+            <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",margin:"0 0 20px",lineHeight:1.5}}>
+              Have a question, bug report, or feedback?<br/>We'd love to hear from you.
+            </p>
+            <a href="mailto:info@elevateinfluence.us"
+              style={{display:"block",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"14px",borderRadius:"14px",padding:"13px",textDecoration:"none"}}>
+              info@elevateinfluence.us
+            </a>
+          </div>
+          <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"14px",padding:"16px"}}>
+            <p style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",margin:0,lineHeight:1.6,textAlign:"center"}}>
+              For billing issues, use <strong style={{color:"#fff"}}>Manage Subscription</strong> in the menu above to access the Stripe billing portal directly.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── User Menu ────────────────────────────────────────────────────────────────
 
-function UserMenu({ currentUser, onLogout, onManage }) {
+function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
   const [open, setOpen] = useState(false);
 
-  // Close menu when clicking outside
   useEffect(() => {
     if (!open) return;
     function handleClick(e) {
@@ -1350,49 +1517,53 @@ function UserMenu({ currentUser, onLogout, onManage }) {
     return () => document.removeEventListener("click", handleClick);
   }, [open]);
 
+  const itemStyle = {
+    width:"100%", display:"flex", alignItems:"center", gap:"12px",
+    padding:"11px 16px", background:"none", border:"none", cursor:"pointer",
+    textAlign:"left", borderTop:"1px solid rgba(255,255,255,0.05)",
+  };
+
   return (
-    <div id="user-menu" className="relative">
-      {/* Avatar button */}
+    <div id="user-menu" style={{position:"relative"}}>
       <button onClick={() => setOpen(v => !v)}
-        className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-white font-black text-sm flex-shrink-0 hover:opacity-90 transition-opacity">
+        style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f43f5e)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"13px",border:"none",cursor:"pointer",flexShrink:0}}>
         {currentUser.username[0].toUpperCase()}
       </button>
 
-      {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden z-50 shadow-2xl"
-          style={{background:"#1e2340", border:"1px solid rgba(255,255,255,0.1)"}}>
+        <div style={{position:"absolute",right:0,top:"calc(100% + 8px)",width:"220px",background:"#1e2340",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"18px",overflow:"hidden",zIndex:100,boxShadow:"0 8px 40px rgba(0,0,0,0.5)"}}>
 
           {/* User info */}
-          <div className="px-4 py-3 border-b border-white/10">
-            <p className="text-white font-black text-sm">@{currentUser.username}</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {currentUser.hasPaid
-                ? <span className="text-emerald-400 text-xs font-semibold">✓ Active subscription</span>
-                : <span className="text-red-400 text-xs font-semibold">No active subscription</span>
-              }
-            </div>
+          <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+            <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:0}}>@{currentUser.username}</p>
+            <p style={{fontSize:"11px",fontWeight:700,margin:"3px 0 0",color:currentUser.hasPaid?"#34d399":"#f87171"}}>
+              {currentUser.hasPaid ? "✓ Active subscription" : "No active subscription"}
+            </p>
           </div>
 
           {/* Menu items */}
-          <div className="py-1">
-            {currentUser.hasPaid && (
-              <button onClick={() => { setOpen(false); onManage(); }}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors">
-                <span className="text-base">💳</span>
-                <div>
-                  <p className="text-white text-sm font-semibold">Manage Subscription</p>
-                  <p className="text-white/40 text-xs">Cancel or update billing</p>
-                </div>
-              </button>
-            )}
-
-            <button onClick={() => { setOpen(false); onLogout(); }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors border-t border-white/5">
-              <span className="text-base">🚪</span>
-              <p className="text-white/70 text-sm font-semibold">Sign Out</p>
+          {currentUser.hasPaid && (
+            <button onClick={() => { setOpen(false); onManage(); }} style={itemStyle}>
+              <span style={{fontSize:"16px"}}>💳</span>
+              <div>
+                <p style={{color:"#fff",fontSize:"13px",fontWeight:700,margin:0}}>Manage Subscription</p>
+                <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",margin:"2px 0 0"}}>Cancel or update billing</p>
+              </div>
             </button>
-          </div>
+          )}
+
+          <button onClick={() => { setOpen(false); onHelp(); }} style={itemStyle}>
+            <span style={{fontSize:"16px"}}>❓</span>
+            <div>
+              <p style={{color:"#fff",fontSize:"13px",fontWeight:700,margin:0}}>Help</p>
+              <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",margin:"2px 0 0"}}>FAQ · How To · Contact</p>
+            </div>
+          </button>
+
+          <button onClick={() => { setOpen(false); onLogout(); }} style={itemStyle}>
+            <span style={{fontSize:"16px"}}>🚪</span>
+            <p style={{color:"rgba(255,255,255,0.65)",fontSize:"13px",fontWeight:700,margin:0}}>Sign Out</p>
+          </button>
         </div>
       )}
     </div>
@@ -1401,7 +1572,7 @@ function UserMenu({ currentUser, onLogout, onManage }) {
 
 // ─── App Root ──────────────────────────────────────────────────────────────────
 
-const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin" };
+const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help" };
 
 export default function App() {
   // [DB INTEGRATION] Replace all useState with useEffect + API/Supabase fetches on mount.
@@ -1441,6 +1612,10 @@ export default function App() {
   // ── Auth ──
   function handleLogin(user)          { setCurrentUser(user); }
   function handleLogout()             { setCurrentUser(null); setView(VIEWS.DASHBOARD); setActiveCommunityId(null); }
+
+  function handleShowHelp() {
+    setView(VIEWS.HELP);
+  }
 
   async function handleManageSubscription() {
     // [DB INTEGRATION — STRIPE] Redirects to Stripe Customer Portal for cancellation,
@@ -1610,7 +1785,7 @@ export default function App() {
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
               <NotificationBell currentUser={currentUser} activeCommunityId={activeCommunityId} />
-              <UserMenu currentUser={currentUser} onLogout={handleLogout} onManage={handleManageSubscription} />
+              <UserMenu currentUser={currentUser} onLogout={handleLogout} onManage={handleManageSubscription} onHelp={handleShowHelp} />
             </div>
           </div>
         </header>
@@ -1655,6 +1830,10 @@ export default function App() {
               onGoLive={handleGoLive}
               onStatusChange={handleStatusChange}
             />
+          )}
+
+          {view===VIEWS.HELP&&(
+            <HelpView onClose={() => setView(VIEWS.DASHBOARD)} />
           )}
 
           {view===VIEWS.ADMIN&&myLeaderCommunities.length>0&&(
