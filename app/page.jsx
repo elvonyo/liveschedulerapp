@@ -1474,7 +1474,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
  *   alter table profiles add column subscription_id text;
  *   alter table profiles add column paid_at timestamptz;
  */
-function PaywallScreen({ currentUser, onPaymentSuccess }) {
+function PaywallScreen({ currentUser, onPaymentSuccess, onLogout }) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
@@ -1561,7 +1561,13 @@ function PaywallScreen({ currentUser, onPaymentSuccess }) {
         </div>
         <p style={{color:"rgba(255,255,255,0.3)",fontSize:"12px",textAlign:"center"}}>
           Signed in as <span style={{color:"rgba(255,255,255,0.5)",fontWeight:700}}>@{currentUser.username}</span>{" · "}
-          <button onClick={() => window.location.reload()} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",textDecoration:"underline",fontSize:"12px"}}>Sign out</button>
+          <button
+            type="button"
+            onClick={onLogout}
+            style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",textDecoration:"underline",fontSize:"12px"}}
+          >
+            Sign out
+          </button>
         </p>
       </div>
     </div>
