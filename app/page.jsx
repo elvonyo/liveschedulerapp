@@ -179,17 +179,24 @@ const inputStyle = { fontSize:"16px", minWidth:0, width:"100%", boxSizing:"borde
 const labelCls = "text-white/70 text-xs font-semibold block mb-1";
 // Fully inline versions used wherever Tailwind is unreliable
 const IS = {
-  input: {width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"13px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",display:"block"},
-  label: {color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"},
-  card:  {background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px"},
-  btn:   {width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"},
-  btnSm: {background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px 14px",cursor:"pointer"},
+  input:    {width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"13px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",display:"block",fontFamily:"inherit"},
+  textarea: {width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"13px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",display:"block",fontFamily:"inherit",resize:"none"},
+  label:    {color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"},
+  card:     {background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px",marginBottom:"12px"},
+  cardFlat: {background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"14px",marginBottom:"10px"},
+  btn:      {width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer",fontFamily:"inherit"},
+  btnGhost: {background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"9px 14px",cursor:"pointer",fontFamily:"inherit"},
+  btnDanger:{background:"rgba(239,68,68,0.2)",color:"#f87171",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"9px 14px",cursor:"pointer",fontFamily:"inherit"},
+  pill:     {display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"10px",fontWeight:700,padding:"3px 8px",borderRadius:"20px"},
+  row:      {display:"flex",alignItems:"flex-start",gap:"10px",paddingTop:"10px",paddingBottom:"10px",borderBottom:"1px solid rgba(255,255,255,0.08)"},
 };
 
 function Badge({ status }) {
+  const bg = status===STATUS.LIVE_NOW?"#ef4444":status===STATUS.UPCOMING?"#fbbf24":status===STATUS.COMPLETED?"#059669":"#6b7280";
+  const fg = status===STATUS.UPCOMING?"#1c1400":"#fff";
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${statusBadgeClass(status)}`}>
-      {status === STATUS.LIVE_NOW && <span style={{width:6,height:6,borderRadius:"50%",background:"#fff",display:"inline-block",animation:"livePulse 1.2s ease-in-out infinite"}}/>}
+    <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"10px",fontWeight:700,padding:"3px 8px",borderRadius:"20px",background:bg,color:fg}}>
+      {status === STATUS.LIVE_NOW && <span style={{width:5,height:5,borderRadius:"50%",background:"#fff",display:"inline-block",animation:"livePulse 1.2s ease-in-out infinite"}}/>}
       {status}
     </span>
   );
@@ -197,26 +204,26 @@ function Badge({ status }) {
 
 function Pill({ label, value, accent }) {
   return (
-    <div className={`flex flex-col items-center rounded-xl px-3 py-2 ${accent?"bg-amber-400":"bg-white/10"}`}>
-      <span className={`text-base font-black leading-none ${accent?"text-gray-900":"text-white"}`}>{value}</span>
-      <span className={`text-xs font-medium mt-0.5 ${accent?"text-gray-700":"text-white/60"}`}>{label}</span>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",borderRadius:"12px",padding:"8px 10px",background:accent?"#fbbf24":"rgba(255,255,255,0.1)"}}>
+      <span style={{fontSize:"15px",fontWeight:900,lineHeight:1,color:accent?"#1c1400":"#fff"}}>{value}</span>
+      <span style={{fontSize:"10px",fontWeight:500,marginTop:"3px",color:accent?"rgba(28,20,0,0.65)":"rgba(255,255,255,0.6)"}}>{label}</span>
     </div>
   );
 }
 
 function SupporterRow({ signup }) {
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-white/10 last:border-0">
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+    <div style={{display:"flex",alignItems:"flex-start",gap:"10px",padding:"10px 0",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+      <div style={{width:"34px",height:"34px",borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f43f5e)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"13px",flexShrink:0}}>
         {signup.displayName[0].toUpperCase()}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-white text-sm">{signup.displayName}</span>
-          {signup.supporterUsername && <span className="text-white/40 text-xs">{signup.supporterUsername}</span>}
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
+          <span style={{fontWeight:700,color:"#fff",fontSize:"13px"}}>{signup.displayName}</span>
+          {signup.supporterUsername && <span style={{color:"rgba(255,255,255,0.4)",fontSize:"11px"}}>{signup.supporterUsername}</span>}
         </div>
-        {signup.plannedGiftAmount != null && <p className="text-amber-300 text-xs font-semibold mt-0.5">🎁 Plans to gift ${signup.plannedGiftAmount}</p>}
-        {signup.comment && <p className="text-white/50 text-xs mt-0.5 italic">"{signup.comment}"</p>}
+        {signup.plannedGiftAmount != null && <p style={{color:"#fcd34d",fontSize:"11px",fontWeight:700,margin:"2px 0 0"}}>🎁 Plans to gift ${signup.plannedGiftAmount}</p>}
+        {signup.comment && <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0",fontStyle:"italic"}}>"{signup.comment}"</p>}
       </div>
     </div>
   );
@@ -471,28 +478,37 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
   }
 
   // ── Expandable panel ──
+  const S = {
+    panelWrap: {marginTop:"8px",background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"16px",border:"1px solid rgba(255,255,255,0.08)",display:"flex",flexDirection:"column",gap:"12px"},
+    title: {color:"#fff",fontWeight:900,fontSize:"14px",margin:0},
+    sub:   {color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:0},
+    err:   {color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"8px",padding:"6px 10px",margin:0},
+    row:   {display:"flex",gap:"8px"},
+    btnC:  {flex:1,background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"13px",border:"none",borderRadius:"10px",padding:"10px",cursor:"pointer"},
+    btnA:  {flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"13px",border:"none",borderRadius:"10px",padding:"10px",cursor:"pointer"},
+  };
   const panelEl = panel && (
-    <div className="mt-2 rounded-2xl p-4 space-y-3" style={{background:"linear-gradient(145deg,#1e2340,#16192e)", border:"1px solid rgba(255,255,255,0.08)"}}>
+    <div style={S.panelWrap}>
       {panel === "join" && <>
-        <p className="text-white font-black text-sm">Join a Community</p>
-        <p className="text-white/40 text-xs">Enter the invite code from your community leader.</p>
-        {err && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-1.5">{err}</p>}
+        <p style={S.title}>Join a Community</p>
+        <p style={S.sub}>Enter the invite code from your community leader.</p>
+        {err && <p style={S.err}>{err}</p>}
         <input value={code} onChange={e=>setCode(e.target.value)} placeholder="e.g. DOOM2024"
-          className={inputCls} style={{textTransform:"uppercase"}} onKeyDown={e=>e.key==="Enter"&&handleJoin()} />
-        <div className="flex gap-2">
-          <button onClick={closePanel} className="flex-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl py-2.5 transition-colors">Cancel</button>
-          <button onClick={handleJoin} className="flex-1 bg-amber-400 hover:bg-amber-300 text-gray-900 text-xs font-bold rounded-xl py-2.5 transition-colors">Join 🤝</button>
+          style={{...IS.input,textTransform:"uppercase"}} onKeyDown={e=>e.key==="Enter"&&handleJoin()} />
+        <div style={S.row}>
+          <button onClick={closePanel} style={S.btnC}>Cancel</button>
+          <button onClick={handleJoin} style={S.btnA}>Join 🤝</button>
         </div>
       </>}
       {panel === "create" && <>
-        <p className="text-white font-black text-sm">Create a Community</p>
-        <p className="text-white/40 text-xs">You'll be the leader. An invite code is generated automatically.</p>
-        {err && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-1.5">{err}</p>}
+        <p style={S.title}>Create a Community</p>
+        <p style={S.sub}>You'll be the leader. An invite code is generated automatically.</p>
+        {err && <p style={S.err}>{err}</p>}
         <input value={communityName} onChange={e=>setCommunityName(e.target.value)} placeholder="e.g. DOOMSQUAD"
-          className={inputCls} style={{textTransform:"uppercase"}} onKeyDown={e=>e.key==="Enter"&&handleCreate()} />
-        <div className="flex gap-2">
-          <button onClick={closePanel} className="flex-1 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl py-2.5 transition-colors">Cancel</button>
-          <button onClick={handleCreate} className="flex-1 bg-amber-400 hover:bg-amber-300 text-gray-900 text-xs font-bold rounded-xl py-2.5 transition-colors">Create 👑</button>
+          style={{...IS.input,textTransform:"uppercase"}} onKeyDown={e=>e.key==="Enter"&&handleCreate()} />
+        <div style={S.row}>
+          <button onClick={closePanel} style={S.btnC}>Cancel</button>
+          <button onClick={handleCreate} style={S.btnA}>Create 👑</button>
         </div>
       </>}
     </div>
@@ -501,17 +517,19 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
   // ── Empty state ──
   if (myGroups.length === 0) return (
     <div>
-      <div className="rounded-2xl p-5 text-center" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-        <p className="text-3xl mb-2">👥</p>
-        <p className="text-white font-black text-base mb-1">No communities yet</p>
-        <p className="text-white/40 text-sm mb-4">Join an existing community or create your own.</p>
-        <div className="flex gap-2">
+      <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"18px",padding:"20px",textAlign:"center"}}>
+        <p style={{fontSize:"28px",marginBottom:"8px"}}>👥</p>
+        <p style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:"0 0 4px"}}>No communities yet</p>
+        <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",margin:"0 0 16px"}}>Join an existing community or create your own.</p>
+        <div style={{display:"flex",gap:"8px"}}>
           <button onClick={() => setPanel(panel==="join"?null:"join")}
-            className={`flex-1 font-bold text-xs rounded-xl py-2.5 transition-colors ${panel==="join"?"bg-amber-400 text-gray-900":"bg-white/10 hover:bg-white/20 text-white"}`}>
+            style={{flex:1,fontWeight:700,fontSize:"13px",border:"none",borderRadius:"10px",padding:"10px",cursor:"pointer",
+              background:panel==="join"?"#fbbf24":"rgba(255,255,255,0.1)",color:panel==="join"?"#1c1400":"#fff"}}>
             🤝 Join
           </button>
           <button onClick={() => setPanel(panel==="create"?null:"create")}
-            className={`flex-1 font-bold text-xs rounded-xl py-2.5 transition-colors ${panel==="create"?"bg-amber-400 text-gray-900":"bg-white/10 hover:bg-white/20 text-white"}`}>
+            style={{flex:1,fontWeight:700,fontSize:"13px",border:"none",borderRadius:"10px",padding:"10px",cursor:"pointer",
+              background:panel==="create"?"#fbbf24":"rgba(255,255,255,0.1)",color:panel==="create"?"#1c1400":"#fff"}}>
             👑 Create
           </button>
         </div>
@@ -523,21 +541,22 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
   // ── Has communities ──
   return (
     <div>
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{scrollbarWidth:"none"}}>
+      <div style={{display:"flex",gap:"8px",overflowX:"auto",paddingBottom:"4px",scrollbarWidth:"none"}}>
         {myGroups.map(g => (
           <button key={g.id} onClick={() => { onSwitch(g.id); closePanel(); }}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black transition-colors ${activeCommunityId===g.id?"bg-amber-400 text-gray-900":"bg-white/10 text-white/70 hover:bg-white/20"}`}>
+            style={{flexShrink:0,display:"flex",alignItems:"center",gap:"6px",padding:"7px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:900,border:"none",cursor:"pointer",
+              background:activeCommunityId===g.id?"#fbbf24":"rgba(255,255,255,0.1)",color:activeCommunityId===g.id?"#1c1400":"rgba(255,255,255,0.7)"}}>
             👥 {g.name}
           </button>
         ))}
-        {/* Join button */}
         <button onClick={() => setPanel(panel==="join"?null:"join")}
-          className={`flex-shrink-0 px-3 py-2 rounded-full text-xs font-bold transition-colors ${panel==="join"?"bg-amber-400 text-gray-900":"bg-white/5 text-white/40 hover:bg-white/10"}`}>
+          style={{flexShrink:0,padding:"7px 12px",borderRadius:"20px",fontSize:"12px",fontWeight:700,border:"none",cursor:"pointer",
+            background:panel==="join"?"#fbbf24":"rgba(255,255,255,0.07)",color:panel==="join"?"#1c1400":"rgba(255,255,255,0.4)"}}>
           🤝 Join
         </button>
-        {/* Create button */}
         <button onClick={() => setPanel(panel==="create"?null:"create")}
-          className={`flex-shrink-0 px-3 py-2 rounded-full text-xs font-bold transition-colors ${panel==="create"?"bg-amber-400 text-gray-900":"bg-white/5 text-white/40 hover:bg-white/10"}`}>
+          style={{flexShrink:0,padding:"7px 12px",borderRadius:"20px",fontSize:"12px",fontWeight:700,border:"none",cursor:"pointer",
+            background:panel==="create"?"#fbbf24":"rgba(255,255,255,0.07)",color:panel==="create"?"#1c1400":"rgba(255,255,255,0.4)"}}>
           👑 Create
         </button>
       </div>
@@ -555,36 +574,36 @@ function OccurrenceCard({ occurrence, signups, onView, isOwner, onGoLive }) {
   const dayLabel  = daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : formatDate(dateObj);
 
   return (
-    <div className="rounded-2xl p-3 flex flex-col gap-2" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
+    <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"12px",display:"flex",flexDirection:"column",gap:"8px",boxSizing:"border-box"}}>
       <div>
-        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+        <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px",flexWrap:"wrap"}}>
           <Badge status={status} />
-          <span className="text-white/50 text-xs">{platformIcon(schedule.platform)}</span>
+          <span style={{color:"rgba(255,255,255,0.5)",fontSize:"12px"}}>{platformIcon(schedule.platform)}</span>
         </div>
-        <p className="text-white font-black text-sm leading-tight">@{schedule.hostUsername}</p>
-        <p className="text-amber-400 text-xs font-bold mt-0.5">{dayLabel}</p>
-        <p className="text-white/50 text-xs">{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
-        <p className="text-white/30 text-xs">{schedule.platform}</p>
+        <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:0}}>@{schedule.hostUsername}</p>
+        <p style={{color:"#fbbf24",fontSize:"11px",fontWeight:700,margin:"2px 0 0"}}>{dayLabel}</p>
+        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"1px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
+        <p style={{color:"rgba(255,255,255,0.3)",fontSize:"11px",margin:"1px 0 0"}}>{schedule.platform}</p>
       </div>
-      {schedule.notes && <p className="text-white/45 text-xs bg-white/5 rounded-lg px-2 py-1.5 line-clamp-2">{schedule.notes}</p>}
-      <div className="flex gap-1.5">
-        <div className="bg-white/10 rounded-lg px-2 py-1 text-center flex-1">
-          <p className="text-white font-black text-sm leading-none">{ss.length}</p>
-          <p className="text-white/50 text-xs">going</p>
+      {schedule.notes && <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",background:"rgba(255,255,255,0.05)",borderRadius:"8px",padding:"6px 8px",margin:0}}>{schedule.notes}</p>}
+      <div style={{display:"flex",gap:"6px"}}>
+        <div style={{background:"rgba(255,255,255,0.1)",borderRadius:"8px",padding:"6px 4px",textAlign:"center",flex:1}}>
+          <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:0,lineHeight:1}}>{ss.length}</p>
+          <p style={{color:"rgba(255,255,255,0.5)",fontSize:"10px",margin:"2px 0 0"}}>going</p>
         </div>
         {totalGift > 0 && (
-          <div className="bg-amber-400 rounded-lg px-2 py-1 text-center flex-1">
-            <p className="text-gray-900 font-black text-sm leading-none">${totalGift}</p>
-            <p className="text-gray-700 text-xs">planned 🎁</p>
+          <div style={{background:"#fbbf24",borderRadius:"8px",padding:"6px 4px",textAlign:"center",flex:1}}>
+            <p style={{color:"#1c1400",fontWeight:900,fontSize:"13px",margin:0,lineHeight:1}}>${totalGift}</p>
+            <p style={{color:"rgba(28,20,0,0.6)",fontSize:"10px",margin:"2px 0 0"}}>planned 🎁</p>
           </div>
         )}
       </div>
-      <div className="flex gap-1.5 mt-auto">
-        <button onClick={() => onView(occurrenceId)} className="flex-1 bg-amber-400 hover:bg-amber-300 text-gray-900 font-bold text-xs rounded-xl py-2 transition-colors">
+      <div style={{display:"flex",gap:"6px",marginTop:"auto"}}>
+        <button onClick={() => onView(occurrenceId)} style={{flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px",cursor:"pointer"}}>
           View & Sign Up
         </button>
         {isOwner && status !== STATUS.LIVE_NOW && status !== STATUS.CANCELLED && daysAway === 0 && (
-          <button onClick={() => onGoLive(schedule.id)} className="px-2.5 bg-red-500/80 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-colors">🔴</button>
+          <button onClick={() => onGoLive(schedule.id)} style={{background:"rgba(239,68,68,0.8)",color:"#fff",border:"none",borderRadius:"10px",padding:"8px 10px",fontSize:"12px",fontWeight:700,cursor:"pointer"}}>🔴</button>
         )}
       </div>
     </div>
@@ -695,20 +714,20 @@ function MySignupPanel({ signup, onUpdate, onRemove }) {
   );
 
   return (
-    <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1a3328,#122a22)",border:"1px solid rgba(52,211,153,0.2)"}}>
-      <div className="flex items-start justify-between gap-3">
+    <div style={{background:"linear-gradient(145deg,#1a3328,#122a22)",borderRadius:"16px",padding:"16px",border:"1px solid rgba(52,211,153,0.2)"}}>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-emerald-400 text-lg">✅</span>
-            <p className="text-emerald-300 font-black text-sm">You're signed up!</p>
+          <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}}>
+            <span style={{fontSize:"16px"}}>✅</span>
+            <p style={{color:"#6ee7b7",fontWeight:900,fontSize:"13px",margin:0}}>You're signed up!</p>
           </div>
-          <p className="text-white/60 text-xs">As <span className="text-white font-semibold">{signup.displayName}</span>{signup.supporterUsername && <span className="text-white/40"> {signup.supporterUsername}</span>}</p>
-          {signup.plannedGiftAmount != null ? <p className="text-amber-300 text-xs font-semibold mt-0.5">🎁 Planning to gift ${signup.plannedGiftAmount}</p> : <p className="text-white/30 text-xs mt-0.5">No gift amount set</p>}
-          {signup.comment && <p className="text-white/40 text-xs italic mt-0.5">"{signup.comment}"</p>}
+          <p style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",margin:0}}>As <span style={{color:"#fff",fontWeight:700}}>{signup.displayName}</span>{signup.supporterUsername && <span style={{color:"rgba(255,255,255,0.4)"}}> {signup.supporterUsername}</span>}</p>
+          {signup.plannedGiftAmount != null ? <p style={{color:"#fcd34d",fontSize:"11px",fontWeight:700,margin:"3px 0 0"}}>🎁 Planning to gift ${signup.plannedGiftAmount}</p> : <p style={{color:"rgba(255,255,255,0.3)",fontSize:"11px",margin:"3px 0 0"}}>No gift amount set</p>}
+          {signup.comment && <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontStyle:"italic",margin:"3px 0 0"}}>"{signup.comment}"</p>}
         </div>
-        <div className="flex flex-col gap-1.5 flex-shrink-0">
-          <button onClick={() => setMode("edit")} className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">✏️ Edit</button>
-          <button onClick={() => setMode("confirm-remove")} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Remove</button>
+        <div style={{display:"flex",flexDirection:"column",gap:"6px",flexShrink:0}}>
+          <button onClick={() => setMode("edit")} style={IS.btnGhost}>✏️ Edit</button>
+          <button onClick={() => setMode("confirm-remove")} style={IS.btnDanger}>Remove</button>
         </div>
       </div>
     </div>
@@ -727,20 +746,20 @@ function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, 
   const mySignup  = ss.find(sg => sg.displayName.toLowerCase()===currentUser.username.toLowerCase() || sg.supporterUsername.replace(/^@/,"").toLowerCase()===currentUser.username.toLowerCase());
 
   return (
-    <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-1 text-white/60 hover:text-white text-sm font-semibold">← Back</button>
-      <div className="rounded-2xl p-5" style={{background:"linear-gradient(135deg,#e67e22,#c0392b)"}}>
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:"4px",background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontWeight:700,cursor:"pointer",padding:0,marginBottom:"2px"}}>← Back</button>
+      <div style={{background:"linear-gradient(135deg,#e67e22,#c0392b)",borderRadius:"18px",padding:"20px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",flexWrap:"wrap"}}>
           <Badge status={status} />
-          <span className="text-white/70 text-xs">{platformIcon(schedule.platform)} {schedule.platform}</span>
+          <span style={{color:"rgba(255,255,255,0.7)",fontSize:"12px"}}>{platformIcon(schedule.platform)} {schedule.platform}</span>
         </div>
-        <h2 className="text-white font-black text-2xl">@{schedule.hostUsername}</h2>
-        <p className="text-white/90 font-bold text-base mt-1">{dayLabel} · {formatDate(dateObj)}</p>
-        <p className="text-white/70 text-sm mt-0.5">{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
-        <p className="text-white/50 text-xs mt-0.5">Repeats every {formatDays(days)}</p>
-        {schedule.notes && <div className="mt-3 bg-black/20 rounded-xl px-4 py-3"><p className="text-white/90 text-sm">{schedule.notes}</p></div>}
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"22px",margin:0}}>@{schedule.hostUsername}</h2>
+        <p style={{color:"rgba(255,255,255,0.9)",fontWeight:700,fontSize:"15px",margin:"4px 0 0"}}>{dayLabel} · {formatDate(dateObj)}</p>
+        <p style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",margin:"2px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
+        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0"}}>Repeats every {formatDays(days)}</p>
+        {schedule.notes && <div style={{marginTop:"10px",background:"rgba(0,0,0,0.2)",borderRadius:"10px",padding:"10px 14px"}}><p style={{color:"rgba(255,255,255,0.9)",fontSize:"13px",margin:0}}>{schedule.notes}</p></div>}
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
         <Pill label="Signed Up" value={ss.length} />
         <Pill label="Date" value={dayLabel} />
         <Pill label="🎁 Expected" value={totalGift>0?`$${totalGift}`:"—"} accent={totalGift>0} />
@@ -750,13 +769,14 @@ function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, 
           ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
           : <SignupForm occurrenceId={occurrenceId} scheduleId={schedule.id} currentUser={currentUser} onSubmit={onSignup} />
       )}
-      <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-        <h3 className="text-white font-black text-base mb-3">Who's Coming ({ss.length})</h3>
-        {ss.length===0 ? <p className="text-white/40 text-sm text-center py-4">No one yet — be the first! 🌟</p> : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
+      <div style={IS.card}>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Who's Coming ({ss.length})</h3>
+        {ss.length===0 ? <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No one yet — be the first! 🌟</p> : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
       </div>
     </div>
   );
 }
+
 
 // ─── My Schedule Tab ───────────────────────────────────────────────────────────
 
@@ -1050,25 +1070,25 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
 
       {!activeCommunityId || myGroups.length===0 ? null : (
         <>
-          <div className="flex items-center justify-between">
-            <h1 className="text-white font-black text-lg">{activeCommunity?.name} Lives</h1>
-          </div>
+          <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:"0 0 12px"}}>{activeCommunity?.name} Lives</h1>
 
           {/* Search */}
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">🔍</span>
+          <div style={{position:"relative",marginBottom:"10px"}}>
+            <span style={{position:"absolute",left:"12px",top:"50%",transform:"translateY(-50%)",fontSize:"14px",opacity:0.35}}>🔍</span>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by @username…"
-              className="w-full bg-white/10 text-white placeholder-white/30 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
-            {search && <button onClick={()=>setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-xs">✕</button>}
+              style={{...IS.input,paddingLeft:"36px",paddingRight:"36px"}} />
+            {search && <button onClick={()=>setSearch("")} style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:"13px",cursor:"pointer"}}>✕</button>}
           </div>
 
           {/* Filter tabs */}
-          <div className="flex justify-center gap-2 flex-wrap">
+          <div style={{display:"flex",justifyContent:"center",gap:"8px",flexWrap:"wrap",marginBottom:"4px"}}>
             {[{key:"All",label:"All",count:allOccurrences.length},{key:"Live Now",label:"🔴 Live Now",count:liveNowCount},{key:"Coming Up",label:"📅 Coming Up",count:upcomingCount}].map(tab => (
               <button key={tab.key} onClick={()=>setFilter(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${filter===tab.key?"bg-amber-400 text-gray-900":"bg-white/10 text-white/60 hover:bg-white/20"}`}>
+                style={{display:"flex",alignItems:"center",gap:"6px",padding:"6px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:700,border:"none",cursor:"pointer",
+                  background:filter===tab.key?"#fbbf24":"rgba(255,255,255,0.1)",color:filter===tab.key?"#1c1400":"rgba(255,255,255,0.6)"}}>
                 {tab.label}
-                {tab.count>0&&<span className={`rounded-full px-1.5 py-0.5 text-xs font-black leading-none ${filter===tab.key?"bg-gray-900/20 text-gray-900":"bg-white/10 text-white/60"}`}>{tab.count}</span>}
+                {tab.count>0&&<span style={{borderRadius:"20px",padding:"1px 6px",fontSize:"10px",fontWeight:900,lineHeight:1,
+                  background:filter===tab.key?"rgba(0,0,0,0.15)":"rgba(255,255,255,0.1)",color:filter===tab.key?"#1c1400":"rgba(255,255,255,0.6)"}}>{tab.count}</span>}
               </button>
             ))}
           </div>
@@ -1563,8 +1583,8 @@ export default function App() {
     <>
       <GlobalStyles />
       <div className="app-shell text-white" style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",overflowX:"hidden"}}>
-        <header className="sticky top-0 z-40 backdrop-blur-lg" style={{background:"rgba(10,12,24,0.93)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-          <div className="w-full px-4 py-3 flex items-center justify-between">
+        <header style={{position:"sticky",top:0,zIndex:40,background:"rgba(10,12,24,0.95)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+          <div style={{padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div className="flex items-center gap-2">
               <span className="text-lg">📡</span>
               <span className="font-black text-white text-sm tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></span>
@@ -1637,17 +1657,18 @@ export default function App() {
           )}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 z-40" style={{background:"rgba(10,12,24,0.97)",borderTop:"1px solid rgba(255,255,255,0.07)"}}>
-          <div className="w-full flex">
+        <nav style={{position:"fixed",bottom:0,left:0,right:0,zIndex:40,background:"rgba(10,12,24,0.97)",borderTop:"1px solid rgba(255,255,255,0.07)"}}>
+          <div style={{display:"flex"}}>
             {navItems.map(item => (
               <button key={item.key} onClick={()=>setView(item.key)}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-bold transition-colors ${view===item.key?"text-amber-400":"text-white/35 hover:text-white/60"}`}>
-                <span className="text-base leading-none">{item.icon}</span>
+                style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",padding:"10px 0 6px",fontSize:"10px",fontWeight:700,border:"none",background:"none",cursor:"pointer",
+                  color:view===item.key?"#fbbf24":"rgba(255,255,255,0.35)"}}>
+                <span style={{fontSize:"18px",lineHeight:1}}>{item.icon}</span>
                 <span>{item.label}</span>
               </button>
             ))}
           </div>
-          <p className="text-center text-white/15 text-xs pb-2 px-4">⚠️ No payments processed — gift amounts are for planning only</p>
+          <p style={{textAlign:"center",color:"rgba(255,255,255,0.15)",fontSize:"10px",padding:"2px 16px 8px",margin:0}}>⚠️ No payments processed — gift amounts are for planning only</p>
         </nav>
       </div>
     </>
