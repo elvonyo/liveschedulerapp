@@ -843,6 +843,51 @@ function MyScheduleTab({ currentUser, schedules, signups, communities, onSave, o
   );
 }
 
+// ─── TimeInput ────────────────────────────────────────────────────────────────
+// Custom time picker using dropdowns — avoids native iOS overflow issues
+
+function TimeInput({ value, onChange, label }) {
+  // Parse HH:MM value
+  const [h, m] = value ? value.split(":").map(Number) : [12, 0];
+  const hour12 = h % 12 || 12;
+  const ampm   = h >= 12 ? "PM" : "AM";
+  const mins   = m;
+
+  function update(newH12, newAmpm, newMins) {
+    let h24 = newH12 % 12;
+    if (newAmpm === "PM") h24 += 12;
+    const hStr = String(h24).padStart(2, "0");
+    const mStr = String(newMins).padStart(2, "0");
+    onChange(hStr + ":" + mStr);
+  }
+
+  const selectStyle = {
+    background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"10px",
+    padding:"12px 8px",fontSize:"15px",color:"#fff",outline:"none",
+    cursor:"pointer",fontFamily:"inherit",textAlign:"center",
+    WebkitAppearance:"none",appearance:"none",flex:1,minWidth:0,
+  };
+
+  return (
+    <div>
+      <label style={IS.label}>{label}</label>
+      <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+        <select value={hour12} onChange={e => update(Number(e.target.value), ampm, mins)} style={selectStyle}>
+          {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+        <span style={{color:"rgba(255,255,255,0.4)",fontWeight:900,fontSize:"16px",flexShrink:0}}>:</span>
+        <select value={mins} onChange={e => update(hour12, ampm, Number(e.target.value))} style={selectStyle}>
+          {[0,5,10,15,20,25,30,35,40,45,50,55].map(n => <option key={n} value={n}>{String(n).padStart(2,"0")}</option>)}
+        </select>
+        <select value={ampm} onChange={e => update(hour12, e.target.value, mins)} style={{...selectStyle,flex:"0 0 64px"}}>
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
 // ─── Schedule Form ─────────────────────────────────────────────────────────────
 
 function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel }) {
@@ -904,14 +949,8 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
             ))}
           </div>
         </div>
-        <div>
-          <label style={IS.label}>Start Time *</label>
-          <input type="time" value={form.startTime} onChange={e=>ch("startTime",e.target.value)} style={IS.input} />
-        </div>
-        <div>
-          <label style={IS.label}>End Time *</label>
-          <input type="time" value={form.endTime} onChange={e=>ch("endTime",e.target.value)} style={IS.input} />
-        </div>
+        <TimeInput label="Start Time *" value={form.startTime} onChange={v=>ch("startTime",v)} />
+        <TimeInput label="End Time *"   value={form.endTime}   onChange={v=>ch("endTime",v)} />
         <div>
           <label style={IS.label}>Notes / Theme (optional)</label>
           <textarea value={form.notes} onChange={e=>ch("notes",e.target.value)} placeholder="What's the vibe every week?" rows={2} style={{...IS.input,resize:"none"}} />
@@ -1684,7 +1723,7 @@ function GlobalStyles() {
         "input, textarea, select, button { font-family: inherit; font-size: 16px; max-width: 100%; }",
         "input[type=time], input[type=date] { min-width: 0; width: 100%; font-size: 16px; }",
         "input[type=date]::-webkit-calendar-picker-indicator, input[type=time]::-webkit-calendar-picker-indicator { filter: invert(0.5); }",
-        "select option { background: #16192e; color: white; }",
+        "select option { background: #16192e; color: white; } select { color-scheme: dark; }",
         ".app-shell { width: 100%; max-width: 500px; margin: 0 auto; min-height: 100vh; background: linear-gradient(180deg,#0d0f1c,#0a0c18); position: relative; }",
         "@media (min-width: 520px) { body { background: #060810; } .app-shell { box-shadow: 0 0 80px rgba(0,0,0,0.7); } }",
         ".line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }",
