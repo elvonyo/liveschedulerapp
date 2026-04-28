@@ -1,4 +1,5 @@
 "use client";
+import { supabase } from "../lib/supabaseClient";
 
 /**
  * Live Support Scheduler — v3
@@ -1575,12 +1576,12 @@ function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
 const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help" };
 
 export default function App() {
+  console.log(supabase);
   // [DB INTEGRATION] Replace all useState with useEffect + API/Supabase fetches on mount.
-  const [communities, setCommunities] = useState(SEED_COMMUNITIES);
-  const [users,       setUsers]       = useState(SEED_USERS);
-  const [schedules,   setSchedules]   = useState(SEED_SCHEDULES);
-  const [signups,     setSignups]     = useState(SEED_SIGNUPS);
-  const [currentUser,  setCurrentUser]  = useState(null);
+  const [communities, setCommunities] = useState([]);
+const [schedules, setSchedules] = useState([]);
+const [signups, setSignups] = useState([]);
+const [currentUser, setCurrentUser] = useState(null);
   const [pendingUser,  setPendingUser]  = useState(null); // user awaiting post-register flow
   const [view,         setView]         = useState(VIEWS.DASHBOARD);
   const [activeId,    setActiveId]    = useState(null);
