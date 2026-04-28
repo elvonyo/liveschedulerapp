@@ -148,12 +148,12 @@ const SEED_COMMUNITIES = [
 
 // communityIds = list of community IDs the user belongs to
 const SEED_USERS = [
-  { id: "u0", username: "DoomLeader",   password: "doom123",    communityIds: ["c1"] },
-  { id: "u1", username: "StarryNight",  password: "pass1",      communityIds: ["c1"] },
-  { id: "u2", username: "CosmicQueen",  password: "pass2",      communityIds: ["c1", "c2"] },
-  { id: "u3", username: "PixelVibes",   password: "pass3",      communityIds: ["c1"] },
-  { id: "u4", username: "AshleyLeader", password: "ashley123",  communityIds: ["c2"] },
-  { id: "u5", username: "GlitterGirl",  password: "glitter1",   communityIds: ["c2"] },
+  { id: "u0", username: "DoomLeader",   password: "doom123",    communityIds: ["c1"],       hasPaid: true,  paidAt: new Date().toISOString() },
+  { id: "u1", username: "StarryNight",  password: "pass1",      communityIds: ["c1"],       hasPaid: true,  paidAt: new Date().toISOString() },
+  { id: "u2", username: "CosmicQueen",  password: "pass2",      communityIds: ["c1", "c2"], hasPaid: true,  paidAt: new Date().toISOString() },
+  { id: "u3", username: "PixelVibes",   password: "pass3",      communityIds: ["c1"],       hasPaid: false, paidAt: null },
+  { id: "u4", username: "AshleyLeader", password: "ashley123",  communityIds: ["c2"],       hasPaid: true,  paidAt: new Date().toISOString() },
+  { id: "u5", username: "GlitterGirl",  password: "glitter1",   communityIds: ["c2"],       hasPaid: false, paidAt: null },
 ];
 
 // schedules now have a communityId
@@ -173,7 +173,8 @@ const SEED_SIGNUPS = [
 
 // ─── Shared UI Atoms ───────────────────────────────────────────────────────────
 
-const inputCls = "w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-400";
+// font-size kept at base (16px equiv) to prevent iOS auto-zoom on focus
+const inputCls = "w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-amber-400";
 const labelCls = "text-white/70 text-xs font-semibold block mb-1";
 
 function Badge({ status }) {
@@ -238,8 +239,8 @@ function AuthScreen({ users, onLogin, onRegister }) {
   const submit = tab === "login" ? handleLogin : handleRegister;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full max-w-sm">
+    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+      <div className="w-full" style={{maxWidth:"420px"}}>
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">📡</p>
           <h1 className="text-white font-black text-2xl tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></h1>
@@ -318,8 +319,8 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Created successfully ──
   if (createdCode) return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full max-w-sm text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+      <div className="w-full text-center" style={{maxWidth:"420px"}}>
         <p className="text-5xl mb-4">🎉</p>
         <h2 className="text-white font-black text-2xl mb-1">Community Created!</h2>
         <p className="text-white/50 text-sm mb-6">Share this invite code with your members so they can join.</p>
@@ -341,8 +342,8 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Join flow ──
   if (step === "join") return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full max-w-sm">
+    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+      <div className="w-full" style={{maxWidth:"420px"}}>
         <button onClick={() => { setStep("choice"); setError(""); }} className="text-white/50 hover:text-white text-sm font-semibold mb-6 flex items-center gap-1">← Back</button>
         <h2 className="text-white font-black text-2xl mb-1">Join a Community</h2>
         <p className="text-white/40 text-sm mb-6">Ask your community leader for their invite code.</p>
@@ -367,8 +368,8 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Create flow ──
   if (step === "create") return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full max-w-sm">
+    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+      <div className="w-full" style={{maxWidth:"420px"}}>
         <button onClick={() => { setStep("choice"); setError(""); }} className="text-white/50 hover:text-white text-sm font-semibold mb-6 flex items-center gap-1">← Back</button>
         <h2 className="text-white font-black text-2xl mb-1">Create a Community</h2>
         <p className="text-white/40 text-sm mb-6">You'll be the leader. An invite code will be generated automatically.</p>
@@ -393,8 +394,8 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
   // ── Initial choice ──
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
-      <div className="w-full max-w-sm">
+    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+      <div className="w-full" style={{maxWidth:"420px"}}>
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">👋</p>
           <h2 className="text-white font-black text-2xl">Welcome, @{newUser.username}!</h2>
@@ -835,7 +836,7 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-4">
       <div className="flex items-center justify-between">
         <h2 className="text-white font-black text-xl">{initial?"Edit My Schedule":"Set My Weekly Schedule"}</h2>
         <button onClick={onCancel} className="text-white/50 hover:text-white text-sm">Cancel</button>
@@ -859,16 +860,16 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
         </div>
         <div>
           <label className={labelCls}>Days of Week * <span className="text-white/30 font-normal">(tap to select)</span></label>
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="grid grid-cols-7 gap-1">
             {DAYS.map((day,i) => (
               <button key={i} type="button" onClick={() => toggleDay(i)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${form.daysOfWeek.includes(i)?"bg-amber-400 text-gray-900":"bg-white/10 text-white/60 hover:bg-white/20"}`}>
-                {day.slice(0,3)}
+                className={`py-2.5 rounded-lg text-xs font-bold transition-colors text-center ${form.daysOfWeek.includes(i)?"bg-amber-400 text-gray-900":"bg-white/10 text-white/60 hover:bg-white/20"}`}>
+                {day.slice(0,2)}
               </button>
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-3">
           <div><label className={labelCls}>Start Time *</label><input type="time" value={form.startTime} onChange={e=>ch("startTime",e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>End Time *</label><input type="time" value={form.endTime} onChange={e=>ch("endTime",e.target.value)} className={inputCls} /></div>
         </div>
@@ -1075,6 +1076,272 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
   );
 }
 
+// ─── Paywall Screen ───────────────────────────────────────────────────────────
+/**
+ * Shown to any logged-in user who hasn't paid yet.
+ * Clicking "Subscribe" calls your backend which creates a Stripe Checkout session.
+ *
+ * [DB INTEGRATION — STRIPE]
+ * 1. npm install @stripe/stripe-js stripe
+ * 2. Set env vars: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY, STRIPE_PRICE_ID
+ * 3. Create /api/stripe/checkout route (see api/stripe/checkout.ts file)
+ * 4. Create /api/stripe/webhook route to listen for checkout.session.completed
+ *    and flip profiles.has_paid = true in Supabase
+ *
+ * Supabase schema:
+ *   alter table profiles add column has_paid boolean default false;
+ *   alter table profiles add column stripe_customer_id text;
+ *   alter table profiles add column subscription_id text;
+ *   alter table profiles add column paid_at timestamptz;
+ */
+function PaywallScreen({ currentUser, onPaymentSuccess }) {
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState("");
+
+  async function handleSubscribe() {
+    setLoading(true);
+    setError("");
+    try {
+      // [DB INTEGRATION] Call your API route to create a Stripe Checkout session
+      // const res = await fetch("/api/stripe/checkout", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ userId: currentUser.id, username: currentUser.username }),
+      // });
+      // const { url } = await res.json();
+      // window.location.href = url; // redirect to Stripe Checkout
+
+      // ── MOCK for demo — simulates successful payment ──
+      await new Promise(r => setTimeout(r, 1500));
+      onPaymentSuccess();
+    } catch (e) {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div id="app-root" className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)"}}>
+      <div className="w-full" style={{maxWidth:"420px"}}>
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <p className="text-5xl mb-3">📡</p>
+          <h1 className="text-white font-black text-2xl tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></h1>
+        </div>
+
+        {/* Pricing card */}
+        <div className="rounded-2xl overflow-hidden mb-4" style={{background:"linear-gradient(145deg,#1e2340,#16192e)", border:"1px solid rgba(251,191,36,0.25)"}}>
+          {/* Header */}
+          <div className="px-6 py-5 text-center" style={{background:"linear-gradient(135deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05))"}}>
+            <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">Full Access</p>
+            <div className="flex items-start justify-center gap-1">
+              <span className="text-white text-2xl font-black mt-1">$</span>
+              <span className="text-white font-black" style={{fontSize:"4rem",lineHeight:1}}>2.99</span>
+              <span className="text-white/50 text-sm mt-auto mb-2">/mo</span>
+            </div>
+            <p className="text-white/50 text-sm mt-1">Cancel anytime</p>
+          </div>
+
+          {/* Features */}
+          <div className="px-6 py-5 space-y-3">
+            {[
+              "View all community live schedules",
+              "Sign up to support your favorite hosts",
+              "Get notified when hosts go live",
+              "Track planned gift amounts",
+              "Join multiple communities",
+              "Post your own weekly schedule",
+            ].map((f, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-amber-400 text-base flex-shrink-0">✓</span>
+                <span className="text-white/80 text-sm">{f}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="px-6 pb-6">
+            {error && <p className="text-red-400 text-xs bg-red-400/10 rounded-lg px-3 py-2 mb-3 text-center">{error}</p>}
+            <button onClick={handleSubscribe} disabled={loading}
+              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-60 text-gray-900 font-black text-base rounded-2xl py-4 transition-colors flex items-center justify-center gap-2">
+              {loading ? (
+                <>
+                  <span style={{width:18,height:18,border:"2.5px solid #92400e",borderTopColor:"transparent",borderRadius:"50%",display:"inline-block",animation:"spin 0.7s linear infinite"}} />
+                  Processing…
+                </>
+              ) : (
+                <>🔓 Subscribe for $2.99/mo</>
+              )}
+            </button>
+            <p className="text-white/25 text-xs text-center mt-3">
+              Secured by Stripe · Cancel anytime in settings
+            </p>
+          </div>
+        </div>
+
+        {/* Signed in as */}
+        <p className="text-white/30 text-xs text-center">
+          Signed in as <span className="text-white/50 font-semibold">@{currentUser.username}</span> ·{" "}
+          <button onClick={() => window.location.reload()} className="underline hover:text-white/50 transition-colors">Sign out</button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Notification Bell ─────────────────────────────────────────────────────────
+/**
+ * Allows users to subscribe to web push notifications.
+ * When a host goes live, your server sends a push to all subscribed community members.
+ *
+ * [DB INTEGRATION — WEB PUSH]
+ * 1. npm install web-push
+ * 2. Generate VAPID keys: npx web-push generate-vapid-keys
+ * 3. Set env vars: NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL
+ * 4. Create /api/push/subscribe route — saves PushSubscription to Supabase push_subscriptions table
+ * 5. Create /api/push/send route — called when host goes live, sends push to community members
+ *
+ * Supabase schema:
+ *   create table push_subscriptions (
+ *     id uuid primary key default gen_random_uuid(),
+ *     user_id uuid references auth.users(id),
+ *     community_id text,
+ *     endpoint text not null,
+ *     p256dh text not null,
+ *     auth text not null,
+ *     created_at timestamptz default now()
+ *   );
+ */
+function NotificationBell({ currentUser, activeCommunityId }) {
+  const [status,   setStatus]   = useState("idle"); // idle | requesting | granted | denied | unsupported
+  const [loading,  setLoading]  = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+
+  useEffect(() => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      setStatus("unsupported"); return;
+    }
+    setStatus(Notification.permission === "granted" ? "granted" :
+              Notification.permission === "denied"  ? "denied"  : "idle");
+  }, []);
+
+  async function requestPermission() {
+    if (!("Notification" in window)) return;
+    setLoading(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        // [DB INTEGRATION] Register service worker + get push subscription, then POST to /api/push/subscribe
+        // const reg = await navigator.serviceWorker.ready;
+        // const sub = await reg.pushManager.subscribe({
+        //   userVisibleOnly: true,
+        //   applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        // });
+        // await fetch("/api/push/subscribe", {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({ subscription: sub, userId: currentUser.id, communityId: activeCommunityId }),
+        // });
+        setStatus("granted");
+      } else {
+        setStatus("denied");
+      }
+    } catch (e) {
+      console.error("Push subscription error:", e);
+    }
+    setLoading(false);
+  }
+
+  if (status === "unsupported") return null;
+
+  return (
+    <div className="relative">
+      <button onClick={() => status === "idle" ? requestPermission() : setShowInfo(v=>!v)}
+        disabled={loading}
+        title={status === "granted" ? "Notifications on" : status === "denied" ? "Notifications blocked" : "Enable notifications"}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+          status === "granted" ? "bg-emerald-500/20 text-emerald-400" :
+          status === "denied"  ? "bg-red-500/20 text-red-400" :
+          "bg-white/10 hover:bg-white/20 text-white/60"
+        }`}>
+        {loading ? "…" : status === "granted" ? "🔔 On" : status === "denied" ? "🔕 Off" : "🔔"}
+      </button>
+
+      {/* Info popover */}
+      {showInfo && (
+        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl p-3 z-50 shadow-xl" style={{background:"#1e2340", border:"1px solid rgba(255,255,255,0.1)"}}>
+          {status === "granted" && <p className="text-white/70 text-xs">You'll get notified when hosts in your community go live. To turn off, check your browser notification settings.</p>}
+          {status === "denied"  && <p className="text-white/70 text-xs">Notifications are blocked. Go to your browser settings → Site Settings → Notifications to allow them for this site.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── User Menu ────────────────────────────────────────────────────────────────
+
+function UserMenu({ currentUser, onLogout, onManage }) {
+  const [open, setOpen] = useState(false);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e) {
+      if (!e.target.closest("#user-menu")) setOpen(false);
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [open]);
+
+  return (
+    <div id="user-menu" className="relative">
+      {/* Avatar button */}
+      <button onClick={() => setOpen(v => !v)}
+        className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-white font-black text-sm flex-shrink-0 hover:opacity-90 transition-opacity">
+        {currentUser.username[0].toUpperCase()}
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden z-50 shadow-2xl"
+          style={{background:"#1e2340", border:"1px solid rgba(255,255,255,0.1)"}}>
+
+          {/* User info */}
+          <div className="px-4 py-3 border-b border-white/10">
+            <p className="text-white font-black text-sm">@{currentUser.username}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {currentUser.hasPaid
+                ? <span className="text-emerald-400 text-xs font-semibold">✓ Active subscription</span>
+                : <span className="text-red-400 text-xs font-semibold">No active subscription</span>
+              }
+            </div>
+          </div>
+
+          {/* Menu items */}
+          <div className="py-1">
+            {currentUser.hasPaid && (
+              <button onClick={() => { setOpen(false); onManage(); }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors">
+                <span className="text-base">💳</span>
+                <div>
+                  <p className="text-white text-sm font-semibold">Manage Subscription</p>
+                  <p className="text-white/40 text-xs">Cancel or update billing</p>
+                </div>
+              </button>
+            )}
+
+            <button onClick={() => { setOpen(false); onLogout(); }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors border-t border-white/5">
+              <span className="text-base">🚪</span>
+              <p className="text-white/70 text-sm font-semibold">Sign Out</p>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── App Root ──────────────────────────────────────────────────────────────────
 
 const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin" };
@@ -1117,6 +1384,23 @@ export default function App() {
   // ── Auth ──
   function handleLogin(user)          { setCurrentUser(user); }
   function handleLogout()             { setCurrentUser(null); setView(VIEWS.DASHBOARD); setActiveCommunityId(null); }
+
+  async function handleManageSubscription() {
+    // [DB INTEGRATION — STRIPE] Redirects to Stripe Customer Portal for cancellation,
+    // payment method updates, and invoice history.
+    try {
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id }),
+      });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch (e) {
+      console.error("Portal error:", e);
+      alert("Could not open billing portal. Please try again.");
+    }
+  }
   function handleRegister(u) {
     // [DB INTEGRATION] Insert user row in DB, then show post-register flow
     setUsers(p=>[...p,u]);
@@ -1181,7 +1465,21 @@ export default function App() {
 
   // ── Schedules ──
   function handleSaveSchedule(s)      { setSchedules(p=>p.find(x=>x.id===s.id)?p.map(x=>x.id===s.id?s:x):[s,...p]); }
-  function handleGoLive(id)           { setSchedules(p=>p.map(s=>s.id===id?{...s,manualStatus:STATUS.LIVE_NOW}:s)); }
+  function handleGoLive(id) {
+    setSchedules(p=>p.map(s=>s.id===id?{...s,manualStatus:STATUS.LIVE_NOW}:s));
+    // [DB INTEGRATION — PUSH] Trigger push notification to community members
+    // const sched = schedules.find(s => s.id === id);
+    // await fetch("/api/push/send", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     communityId: sched.communityId,
+    //     title: `@${sched.hostUsername} is LIVE now! 🔴`,
+    //     body: `on ${sched.platform} — go show your support!`,
+    //     url: `/live/${id}`,
+    //   }),
+    // });
+  }
   function handleStatusChange(id, st) { setSchedules(p=>p.map(s=>s.id===id?{...s,manualStatus:st}:s)); }
 
   // ── Signups ──
@@ -1209,6 +1507,25 @@ export default function App() {
     </>
   );
 
+  // Paywall gate — block access until subscription is active
+  // [DB INTEGRATION] currentUser.hasPaid comes from profiles.has_paid in Supabase,
+  // refreshed after Stripe webhook confirms payment.
+  if (!currentUser.hasPaid) return (
+    <>
+      <GlobalStyles />
+      <PaywallScreen
+        currentUser={currentUser}
+        onPaymentSuccess={() => {
+          // [DB INTEGRATION] After real Stripe payment, webhook flips has_paid in DB.
+          // Here we update local state to let the user through immediately after mock payment.
+          const updated = { ...currentUser, hasPaid: true, paidAt: new Date().toISOString() };
+          setUsers(p => p.map(u => u.id === currentUser.id ? updated : u));
+          setCurrentUser(updated);
+        }}
+      />
+    </>
+  );
+
   const myGroups    = communities.filter(c=>currentUser.communityIds?.includes(c.id));
   const liveNow     = schedules.filter(s=>currentUser.communityIds?.includes(s.communityId)&&effectiveStatus(s)===STATUS.LIVE_NOW).length;
 
@@ -1221,22 +1538,22 @@ export default function App() {
   return (
     <>
       <GlobalStyles />
-      <div className="min-h-screen text-white" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",fontFamily:"'DM Sans','Segoe UI',sans-serif"}}>
+      <div id="app-root" className="min-h-screen text-white" style={{background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",fontFamily:"'DM Sans','Segoe UI',sans-serif",overflowX:"hidden",width:"100%"}}>
         <header className="sticky top-0 z-40 backdrop-blur-lg" style={{background:"rgba(10,12,24,0.93)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="w-full mx-auto px-4 py-3 flex items-center justify-between" style={{maxWidth:"480px"}}>
             <div className="flex items-center gap-2">
               <span className="text-lg">📡</span>
               <span className="font-black text-white text-sm tracking-tight">LiveSupport <span className="text-amber-400">Scheduler</span></span>
               {liveNow>0&&<span className="bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full" style={{animation:"livePulse 1.2s ease-in-out infinite"}}>{liveNow} LIVE</span>}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-white/40 text-xs hidden sm:block">@{currentUser.username}</span>
-              <button onClick={handleLogout} className="text-white/40 hover:text-white/80 text-xs font-semibold transition-colors">Sign out</button>
+            <div className="flex items-center gap-2">
+              <NotificationBell currentUser={currentUser} activeCommunityId={activeCommunityId} />
+              <UserMenu currentUser={currentUser} onLogout={handleLogout} onManage={handleManageSubscription} />
             </div>
           </div>
         </header>
 
-        <main className="max-w-lg mx-auto px-4 py-5 pb-28">
+        <main className="w-full mx-auto px-4 py-5 pb-28" style={{overflowX:"hidden", maxWidth:"480px"}}>
           {view===VIEWS.DASHBOARD && (
             <DashboardView
               schedules={schedules}
@@ -1297,7 +1614,7 @@ export default function App() {
         </main>
 
         <nav className="fixed bottom-0 left-0 right-0 z-40" style={{background:"rgba(10,12,24,0.97)",borderTop:"1px solid rgba(255,255,255,0.07)"}}>
-          <div className="max-w-lg mx-auto flex">
+          <div className="w-full mx-auto flex" style={{maxWidth:"480px"}}>
             {navItems.map(item => (
               <button key={item.key} onClick={()=>setView(item.key)}
                 className={`flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-bold transition-colors ${view===item.key?"text-amber-400":"text-white/35 hover:text-white/60"}`}>
@@ -1316,17 +1633,40 @@ export default function App() {
 // ─── Global Styles ─────────────────────────────────────────────────────────────
 
 function GlobalStyles() {
+  // Inject viewport meta if not already present (handles cases where layout.tsx doesn't set it)
+  useEffect(() => {
+    if (!document.querySelector('meta[name="viewport"]')) {
+      const meta = document.createElement("meta");
+      meta.name = "viewport";
+      meta.content = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
+      document.head.appendChild(meta);
+    } else {
+      // Ensure existing viewport tag has correct content
+      const existing = document.querySelector('meta[name="viewport"]');
+      existing.content = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
+    }
+  }, []);
+
   return (
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,900&display=swap');
-      *, *::before, *::after { box-sizing: border-box; margin: 0; }
-      input[type="date"]::-webkit-calendar-picker-indicator,
-      input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
-      select option { background: #16192e; color: white; }
-      .line-clamp-2 { display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
-      @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.45;transform:scale(1.35)} }
-      ::-webkit-scrollbar { width:4px; height:4px; }
-      ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:4px; }
-    `}</style>
+    <>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,900&display=swap"
+      />
+      <style>{[
+        "*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }",
+        "html, body { width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; }",
+        "@media (min-width: 520px) { body { background: #060810; } #app-root { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; } }",
+        "input, textarea, select, button { font-family: inherit; font-size: inherit; max-width: 100%; }",
+        "input[type=time], input[type=date] { min-width: 0; width: 100%; }",
+        "input[type=date]::-webkit-calendar-picker-indicator, input[type=time]::-webkit-calendar-picker-indicator { filter: invert(0.5); }",
+        "select option { background: #16192e; color: white; }",
+        ".line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }",
+        "@keyframes livePulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.45; transform:scale(1.35); } }",
+        "@keyframes spin { to { transform: rotate(360deg); } }",
+        "::-webkit-scrollbar { width:4px; height:4px; }",
+        "::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:4px; }",
+      ].join(" ")}</style>
+    </>
   );
 }
