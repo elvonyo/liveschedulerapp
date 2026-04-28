@@ -75,10 +75,11 @@ export async function POST(req: NextRequest) {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [
-        {
-          price: process.env.STRIPE_PRICE_ID!,
-          quantity: 1,
-        },
+
+  {
+    price: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+    quantity: 1,
+  	},
       ],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/`,
