@@ -8,7 +8,7 @@ function PaymentSuccessInner() {
   const router       = useRouter();
   const sessionId    = searchParams.get("session_id");
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [errMsg,  setErrMsg]  = useState("");
+  const [errMsg, setErrMsg] = useState("");
 
   useEffect(() => {
     if (!sessionId) {
@@ -26,9 +26,13 @@ function PaymentSuccessInner() {
       .then(data => {
         if (data.success) {
           setStatus("success");
-          // Wait a moment then redirect — the main app will call
-          // loadUserFromSupabase which will now read has_paid = true
-          setTimeout(() => router.push("/"), 2500);
+          // Give Supabase a moment to propagate the update,
+          // then redirect — the app will re-read has_paid = true on load
+          setTimeout(() => {
+            // Force a full page reload so restoreSession() re-fetches
+            // the updated profile from Supabase fresh
+            window.location.href = "/";
+          }, 2000);
         } else {
           setErrMsg(data.error || "Payment could not be verified.");
           setStatus("error");
@@ -41,12 +45,15 @@ function PaymentSuccessInner() {
   }, [sessionId]);
 
   const wrap: React.CSSProperties = {
-    minHeight:"100vh", display:"flex", flexDirection:"column",
-    alignItems:"center", justifyContent:"center",
-    padding:"32px 20px",
-    background:"linear-gradient(180deg,#0d0f1c,#0a0c18)",
-    fontFamily:"'DM Sans','Segoe UI',sans-serif",
-    boxSizing:"border-box",
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "32px 20px",
+    background: "linear-gradient(180deg,#0d0f1c,#0a0c18)",
+    fontFamily: "'DM Sans','Segoe UI',sans-serif",
+    boxSizing: "border-box",
   };
 
   return (
@@ -57,7 +64,7 @@ function PaymentSuccessInner() {
           <>
             <div style={{width:48,height:48,border:"3px solid rgba(251,191,36,0.3)",borderTopColor:"#fbbf24",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 20px"}} />
             <p style={{color:"#fff",fontWeight:900,fontSize:"20px",margin:"0 0 8px"}}>Confirming your payment…</p>
-            <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",margin:0}}>Checking with Stripe</p>
+            <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",margin:0}}>Updating your account</p>
           </>
         )}
 
@@ -66,13 +73,12 @@ function PaymentSuccessInner() {
             <p style={{fontSize:"56px",marginBottom:"16px"}}>🎉</p>
             <p style={{color:"#fff",fontWeight:900,fontSize:"24px",margin:"0 0 8px"}}>Payment Successful!</p>
             <p style={{color:"rgba(255,255,255,0.5)",fontSize:"14px",margin:"0 0 24px",lineHeight:1.6}}>
-              Welcome to LiveSupport Scheduler.<br/>
-              Taking you to the app now…
+              Your subscription is active.<br/>Taking you to the app now…
             </p>
             <div style={{background:"linear-gradient(145deg,#1a3328,#122a22)",borderRadius:"16px",padding:"16px",border:"1px solid rgba(52,211,153,0.2)",marginBottom:"20px"}}>
               <p style={{color:"#6ee7b7",fontSize:"13px",margin:0,fontWeight:700}}>✓ Subscription activated</p>
             </div>
-            <button onClick={() => router.push("/")}
+            <button onClick={() => { window.location.href = "/"; }}
               style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"}}>
               Go to App →
             </button>
@@ -94,7 +100,7 @@ function PaymentSuccessInner() {
                 info@elevateinfluence.us
               </a>
             </p>
-            <button onClick={() => router.push("/")}
+            <button onClick={() => { window.location.href = "/"; }}
               style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"}}>
               Go to App
             </button>
