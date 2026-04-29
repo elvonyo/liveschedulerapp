@@ -12,7 +12,7 @@ function PaymentSuccessInner() {
 
   useEffect(() => {
     if (!sessionId) {
-      setErrMsg("No session ID found in URL.");
+      setErrMsg("No session ID in URL.");
       setStatus("error");
       return;
     }
@@ -26,9 +26,11 @@ function PaymentSuccessInner() {
       .then(data => {
         if (data.success) {
           setStatus("success");
-          setTimeout(() => router.push("/"), 3000);
+          // Wait a moment then redirect — the main app will call
+          // loadUserFromSupabase which will now read has_paid = true
+          setTimeout(() => router.push("/"), 2500);
         } else {
-          setErrMsg(data.error || "Verification failed.");
+          setErrMsg(data.error || "Payment could not be verified.");
           setStatus("error");
         }
       })
@@ -46,11 +48,10 @@ function PaymentSuccessInner() {
     fontFamily:"'DM Sans','Segoe UI',sans-serif",
     boxSizing:"border-box",
   };
-  const inner: React.CSSProperties = { width:"100%", maxWidth:"420px", textAlign:"center" };
 
   return (
     <div style={wrap}>
-      <div style={inner}>
+      <div style={{width:"100%",maxWidth:"420px",textAlign:"center"}}>
 
         {status === "loading" && (
           <>
@@ -66,13 +67,10 @@ function PaymentSuccessInner() {
             <p style={{color:"#fff",fontWeight:900,fontSize:"24px",margin:"0 0 8px"}}>Payment Successful!</p>
             <p style={{color:"rgba(255,255,255,0.5)",fontSize:"14px",margin:"0 0 24px",lineHeight:1.6}}>
               Welcome to LiveSupport Scheduler.<br/>
-              Redirecting you to the app in 3 seconds…
+              Taking you to the app now…
             </p>
             <div style={{background:"linear-gradient(145deg,#1a3328,#122a22)",borderRadius:"16px",padding:"16px",border:"1px solid rgba(52,211,153,0.2)",marginBottom:"20px"}}>
               <p style={{color:"#6ee7b7",fontSize:"13px",margin:0,fontWeight:700}}>✓ Subscription activated</p>
-              <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",margin:"4px 0 0"}}>
-                Sign out and back in if the app still shows the paywall.
-              </p>
             </div>
             <button onClick={() => router.push("/")}
               style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"}}>
@@ -94,8 +92,7 @@ function PaymentSuccessInner() {
               If your payment went through, please contact{" "}
               <a href="mailto:info@elevateinfluence.us" style={{color:"#fbbf24"}}>
                 info@elevateinfluence.us
-              </a>{" "}
-              and we will get you sorted.
+              </a>
             </p>
             <button onClick={() => router.push("/")}
               style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"}}>
