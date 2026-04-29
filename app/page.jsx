@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 /**
@@ -1914,6 +1914,7 @@ export default function App() {
   const [activeId,    setActiveId]    = useState(null);
   const [activeCommunityId, setActiveCommunityId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const sessionRestoredRef = React.useRef(false);
 
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(()=>setTick(n=>n+1), 30000); return ()=>clearInterval(t); }, []);
@@ -1950,7 +1951,7 @@ useEffect(() => {
 
 async function loadUserFromSupabase(authUser) {
 
-  if (!authUser) return null;
+  if (!authUser) { setAuthLoading(false); return null; }
 
   let { data: profile, error: profileError } = await supabase
 
@@ -1965,7 +1966,7 @@ async function loadUserFromSupabase(authUser) {
   if (profileError) {
 
     console.error("Profile load error:", profileError);
-
+    setAuthLoading(false);
     return null;
 
   }
@@ -1993,7 +1994,7 @@ async function loadUserFromSupabase(authUser) {
     if (createProfileError) {
 
       console.error("Profile create error:", createProfileError);
-
+      setAuthLoading(false);
       return null;
 
     }
@@ -2082,6 +2083,8 @@ async function loadUserFromSupabase(authUser) {
 
   );
 
+  setAuthLoading(false);
+
   return appUser;
 
 }
@@ -2090,27 +2093,41 @@ useEffect(() => {
   let active = true;
 
   async function restoreSession() {
-    const { data } = await supabase.auth.getSession();
-
-    if (active && data.session?.user) {
-      await loadUserFromSupabase(data.session.user);
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (active && data.session?.user) {
+        sessionRestoredRef.current = true;
+        await loadUserFromSupabase(data.session.user);
+      }
+    } catch (e) {
+      console.error("restoreSession error:", e);
+    } finally {
+      if (active) setAuthLoading(false);
     }
-
-    if (active) setAuthLoading(false);
   }
 
   restoreSession();
 
   const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === "SIGNED_OUT") {
+      sessionRestoredRef.current = false;
       setCurrentUser(null);
       setPendingUser(null);
       setActiveCommunityId(null);
       setView(VIEWS.DASHBOARD);
+      setAuthLoading(false);
+      return;
     }
 
     if (session?.user && event !== "SIGNED_OUT") {
-      await loadUserFromSupabase(session.user);
+      // Skip if restoreSession already loaded this session on mount
+      if (event === "INITIAL_SESSION" && sessionRestoredRef.current) return;
+      try {
+        await loadUserFromSupabase(session.user);
+      } catch(e) {
+        console.error("onAuthStateChange error:", e);
+        setAuthLoading(false);
+      }
     }
   });
 
@@ -2174,7 +2191,10 @@ async function handleLogout() {
   }
 
   const appUser = await loadUserFromSupabase(data.user);
-  if (appUser) setPendingUser(appUser);
+  if (appUser) {
+    setPendingUser(appUser);
+  }
+  setAuthLoading(false);
   return { error: null };
 }
 
