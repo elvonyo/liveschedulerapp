@@ -1512,7 +1512,9 @@ function PaywallScreen({ currentUser, onPaymentSuccess, onLogout }) {
         throw new Error("Stripe checkout did not return a checkout URL.");
       }
 
-      window.location.href = data.url;
+      // Replace current history entry so the paywall isn't in the back stack.
+      // This prevents the back gesture from returning to the paywall or Stripe page.
+      window.location.replace(data.url);
     } catch (e) {
       console.error("Checkout error:", e);
       setError(e.message || "Something went wrong. Please try again.");
