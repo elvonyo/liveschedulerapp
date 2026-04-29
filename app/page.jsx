@@ -451,10 +451,11 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
     onCreateCommunity(community);
   }
 
-  function handleJoin() {
-    const community = communities.find(c => c.inviteCode.toUpperCase() === inviteCode.trim().toUpperCase());
-    if (!community) { setError("Invalid invite code. Double-check and try again."); return; }
-    onJoinCommunity(community);
+  async function handleJoin() {
+    if (!inviteCode.trim()) { setError("Please enter an invite code."); return; }
+    setError("");
+    const ok = await onJoinCommunity(inviteCode.trim());
+    if (!ok) { setError("Invalid invite code. Double-check and try again."); return; }
   }
 
   function copyCode() {
@@ -587,8 +588,9 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
 
   function closePanel() { setPanel(null); setCode(""); setCommunityName(""); setErr(""); }
 
-  function handleJoin() {
-    const ok = onJoin(code.trim());
+  async function handleJoin() {
+    setErr("");
+    const ok = await onJoin(code.trim());
     if (!ok) { setErr("Invalid invite code. Check with your leader."); return; }
     closePanel();
   }
@@ -2412,9 +2414,33 @@ async function handleLogout() {
     setActiveCommunityId(mappedCommunity.id);
   }
 
-  async function handleJoinAfterRegister(community) {
+  async function handleJoinAfterRegister(codeOrCommunity) {
     const owner = pendingUser || currentUser;
-    if (!owner) return;
+    if (!owner) return false;
+
+    // Accept either an invite code string or a community object
+    let community = typeof codeOrCommunity === "string" ? null : codeOrCommunity;
+
+    if (!community) {
+      // Look up community by invite code in Supabase
+      const { data: found, error: findError } = await supabase
+        .from("communities")
+        .select("id, name, invite_code, leader_id, created_at")
+        .eq("invite_code", codeOrCommunity.toUpperCase())
+        .maybeSingle();
+
+      if (findError || !found) return false;
+
+      community = {
+        id: found.id,
+        name: found.name,
+        inviteCode: found.invite_code,
+        leaderId: found.leader_id,
+        createdAt: found.created_at,
+      };
+
+      setCommunities(p => p.find(c => c.id === community.id) ? p : [...p, community]);
+    }
 
     const { error } = await supabase
       .from("community_members")
@@ -2425,8 +2451,7 @@ async function handleLogout() {
       });
 
     if (error && !error.message?.toLowerCase().includes("duplicate")) {
-      alert(error.message);
-      return;
+      return false;
     }
 
     const updated = { ...owner, communityIds: [...new Set([...(owner.communityIds||[]), community.id])] };
@@ -2434,6 +2459,7 @@ async function handleLogout() {
     setCurrentUser(updated);
     setPendingUser(null);
     setActiveCommunityId(community.id);
+    return true;
   }
 
   function handleSkipCommunity() {
