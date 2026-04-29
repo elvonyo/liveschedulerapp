@@ -25,7 +25,7 @@ const STATUS = {
 };
 
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const LOOK_AHEAD_DAYS = 4;
+const LOOK_AHEAD_DAYS = 7;  // ALL filter shows 7 days
 const WEEKS_OUT       = 2;
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
@@ -1373,80 +1373,230 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
 
 // ─── Dashboard View ────────────────────────────────────────────────────────────
 
+// ─── Host Card (grouped — one card per host) ──────────────────────────────────
+// Shows a host's full weekly schedule with next/live occurrence highlighted.
+
+function HostCard({ schedule, occurrences, signups, onView, isOwner, onGoLive }) {
+  const now        = new Date();
+  const today      = now.toDateString();
+  const tomorrow   = new Date(now); tomorrow.setDate(now.getDate() + 1);
+  const tomorrowStr = tomorrow.toDateString();
+
+  // Find the most urgent occurrence (live now first, then soonest upcoming)
+  const live    = occurrences.find(o => o.status === STATUS.LIVE_NOW);
+  const primary = live || occurrences[0];
+  if (!primary) return null;
+
+  const status   = primary.status;
+  const daysAway = primary.daysAway;
+  const isToday  = primary.dateObj.toDateString() === today;
+  const isTomorrow = primary.dateObj.toDateString() === tomorrowStr;
+
+  const dayLabel = status === STATUS.LIVE_NOW ? "🔴 Live Now"
+    : isToday    ? "Today"
+    : isTomorrow ? "Tomorrow"
+    : formatDate(primary.dateObj);
+
+  // All days this host goes live — show as short day pills
+  const days = schedule.daysOfWeek ?? [];
+  const DAY_SHORT = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+  // Total signups across all occurrences for this host
+  const totalSignups = signups.filter(sg => sg.scheduleId === schedule.id).length;
+  const totalGift    = signups.filter(sg => sg.scheduleId === schedule.id)
+                              .reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
+
+  return (
+    <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"14px",display:"flex",flexDirection:"column",gap:"10px",boxSizing:"border-box"}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"8px"}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px",flexWrap:"wrap"}}>
+            <Badge status={status} />
+            <span style={{color:"rgba(255,255,255,0.5)",fontSize:"11px"}}>{platformIcon(schedule.platform)}</span>
+          </div>
+          <p style={{color:"#fff",fontWeight:900,fontSize:"14px",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>@{schedule.hostUsername}</p>
+          <p style={{color:"#fbbf24",fontSize:"11px",fontWeight:700,margin:"2px 0 0"}}>{dayLabel}</p>
+          <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"1px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
+        </div>
+        {/* Day pills */}
+        <div style={{display:"flex",gap:"3px",flexWrap:"wrap",justifyContent:"flex-end",maxWidth:"90px"}}>
+          {DAY_SHORT.map((d, i) => {
+            const isScheduled = days.includes(i);
+            const isNext = primary.dateObj.getDay() === i;
+            return (
+              <span key={i} style={{
+                fontSize:"9px", fontWeight:700, padding:"2px 4px", borderRadius:"4px",
+                background: isScheduled && isNext ? "#fbbf24"
+                          : isScheduled ? "rgba(251,191,36,0.2)"
+                          : "rgba(255,255,255,0.06)",
+                color: isScheduled && isNext ? "#1c1400"
+                     : isScheduled ? "#fbbf24"
+                     : "rgba(255,255,255,0.2)",
+              }}>{d}</span>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Notes */}
+      {schedule.notes && (
+        <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",background:"rgba(255,255,255,0.05)",borderRadius:"8px",padding:"5px 8px",margin:0}}>{schedule.notes}</p>
+      )}
+
+      {/* Stats */}
+      <div style={{display:"flex",gap:"6px"}}>
+        <div style={{background:"rgba(255,255,255,0.1)",borderRadius:"8px",padding:"5px 4px",textAlign:"center",flex:1}}>
+          <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:0,lineHeight:1}}>{totalSignups}</p>
+          <p style={{color:"rgba(255,255,255,0.5)",fontSize:"10px",margin:"2px 0 0"}}>supporters</p>
+        </div>
+        {totalGift > 0 && (
+          <div style={{background:"#fbbf24",borderRadius:"8px",padding:"5px 4px",textAlign:"center",flex:1}}>
+            <p style={{color:"#1c1400",fontWeight:900,fontSize:"13px",margin:0,lineHeight:1}}>${totalGift}</p>
+            <p style={{color:"rgba(28,20,0,0.6)",fontSize:"10px",margin:"2px 0 0"}}>planned 🎁</p>
+          </div>
+        )}
+      </div>
+
+      {/* Action */}
+      <div style={{display:"flex",gap:"6px",marginTop:"auto"}}>
+        <button onClick={() => onView(primary.occurrenceId)}
+          style={{flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px",cursor:"pointer"}}>
+          View & Sign Up
+        </button>
+        {isOwner && status !== STATUS.LIVE_NOW && status !== STATUS.CANCELLED && daysAway === 0 && (
+          <button onClick={() => onGoLive(schedule.id)}
+            style={{background:"rgba(239,68,68,0.8)",color:"#fff",border:"none",borderRadius:"10px",padding:"8px 10px",fontSize:"12px",fontWeight:700,cursor:"pointer"}}>🔴</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DashboardView({ schedules, signups, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, activeCommunityId, onSwitchCommunity }) {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
   const myGroups = communities.filter(c => currentUser.communityIds?.includes(c.id));
+  const activeCommunity = communities.find(c=>c.id===activeCommunityId);
 
-  // Filter schedules to the active community
   const communitySchedules = useMemo(() => {
     if (!activeCommunityId) return [];
     return schedules.filter(s => s.communityId === activeCommunityId);
   }, [schedules, activeCommunityId]);
 
+  // All occurrences expanded (7 days out for ALL, 4 for Coming Up)
   const allOccurrences = useMemo(() => {
     const occ = communitySchedules.flatMap(s => expandOccurrences(s));
     const order = { [STATUS.LIVE_NOW]:0, [STATUS.UPCOMING]:1, [STATUS.COMPLETED]:2, [STATUS.CANCELLED]:3 };
     return occ.sort((a,b) => { const oa=order[a.status]??9, ob=order[b.status]??9; return oa!==ob?oa-ob:a.dateObj-b.dateObj; });
   }, [communitySchedules, tick]);
 
-  const liveNowCount  = allOccurrences.filter(o=>o.status===STATUS.LIVE_NOW).length;
-  const upcomingCount = allOccurrences.filter(o=>o.status===STATUS.UPCOMING).length;
+  // Group occurrences by schedule (one card per host)
+  const groupedHosts = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toDateString();
+    const tomorrowDate = new Date(now); tomorrowDate.setDate(now.getDate() + 1);
+    const tomorrowStr = tomorrowDate.toDateString();
 
-  const filtered = useMemo(() => {
-    let list = allOccurrences;
-    if (filter==="Live Now")  list = list.filter(o=>o.status===STATUS.LIVE_NOW);
-    if (filter==="Coming Up") list = list.filter(o=>o.status===STATUS.UPCOMING);
-    if (search.trim()) { const q=search.trim().replace(/^@/,"").toLowerCase(); list=list.filter(o=>o.schedule.hostUsername.toLowerCase().includes(q)); }
-    return list;
+    // Apply filter first
+    let filtered = allOccurrences;
+    if (filter === "Live Now")  filtered = filtered.filter(o => o.status === STATUS.LIVE_NOW);
+    if (filter === "Today")     filtered = filtered.filter(o => o.dateObj.toDateString() === todayStr);
+    if (filter === "Tomorrow")  filtered = filtered.filter(o => o.dateObj.toDateString() === tomorrowStr);
+    if (filter === "Coming Up") filtered = filtered.filter(o => o.daysAway >= 2 && o.daysAway <= 4);
+    if (search.trim()) {
+      const q = search.trim().replace(/^@/,"").toLowerCase();
+      filtered = filtered.filter(o => o.schedule.hostUsername.toLowerCase().includes(q));
+    }
+
+    // Group by scheduleId — one entry per host
+    const map = new Map();
+    for (const occ of filtered) {
+      if (!map.has(occ.scheduleId)) {
+        map.set(occ.scheduleId, { schedule: occ.schedule, occurrences: [] });
+      }
+      map.get(occ.scheduleId).occurrences.push(occ);
+    }
+
+    // Sort groups: Live Now first, then by soonest occurrence
+    return Array.from(map.values()).sort((a, b) => {
+      const aLive = a.occurrences.some(o => o.status === STATUS.LIVE_NOW);
+      const bLive = b.occurrences.some(o => o.status === STATUS.LIVE_NOW);
+      if (aLive && !bLive) return -1;
+      if (!aLive && bLive) return 1;
+      return (a.occurrences[0]?.daysAway ?? 99) - (b.occurrences[0]?.daysAway ?? 99);
+    });
   }, [allOccurrences, filter, search]);
 
-  const activeCommunity = communities.find(c=>c.id===activeCommunityId);
+  const liveNowCount  = communitySchedules.filter(s => effectiveStatus(s) === STATUS.LIVE_NOW).length;
+  const todayCount    = allOccurrences.filter(o => o.dateObj.toDateString() === new Date().toDateString()).length;
+  const tomorrowDate  = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowCount = allOccurrences.filter(o => o.dateObj.toDateString() === tomorrowDate.toDateString()).length;
+  const comingUpCount = allOccurrences.filter(o => o.daysAway >= 2 && o.daysAway <= 4).length;
+
+  const filterTabs = [
+    { key:"All",       label:"All",        count: communitySchedules.length },
+    { key:"Live Now",  label:"🔴 Live",    count: liveNowCount },
+    { key:"Today",     label:"📅 Today",   count: todayCount },
+    { key:"Tomorrow",  label:"🌅 Tomorrow",count: tomorrowCount },
+    { key:"Coming Up", label:"⏳ Coming",  count: comingUpCount },
+  ];
+
+  const emptyMsg = search ? `No lives found for "@${search.replace(/^@/,"")}"` :
+    filter==="Live Now" ? "No one is live right now." :
+    filter==="Today"    ? "No lives today." :
+    filter==="Tomorrow" ? "Nothing scheduled tomorrow." :
+    filter==="Coming Up"? "Nothing coming up in the next 4 days." :
+    "No schedules in this community yet.";
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
-      {/* Community switcher */}
       <CommunitySwitcher myGroups={myGroups} activeCommunityId={activeCommunityId} onSwitch={onSwitchCommunity} onJoin={onJoinCommunity} onCreate={onCreateCommunity} />
 
       {!activeCommunityId || myGroups.length===0 ? null : (
         <>
-          <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:"0 0 12px"}}>{activeCommunity?.name} Lives</h1>
+          <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>{activeCommunity?.name} Lives</h1>
 
           {/* Search */}
-          <div style={{position:"relative",marginBottom:"10px"}}>
+          <div style={{position:"relative"}}>
             <span style={{position:"absolute",left:"12px",top:"50%",transform:"translateY(-50%)",fontSize:"14px",opacity:0.35}}>🔍</span>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by @username…"
               style={{...IS.input,paddingLeft:"36px",paddingRight:"36px"}} />
             {search && <button onClick={()=>setSearch("")} style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:"13px",cursor:"pointer"}}>✕</button>}
           </div>
 
-          {/* Filter tabs */}
-          <div style={{display:"flex",justifyContent:"center",gap:"8px",flexWrap:"wrap",marginBottom:"4px"}}>
-            {[{key:"All",label:"All",count:allOccurrences.length},{key:"Live Now",label:"🔴 Live Now",count:liveNowCount},{key:"Coming Up",label:"📅 Coming Up",count:upcomingCount}].map(tab => (
+          {/* Filter tabs — scrollable row */}
+          <div style={{display:"flex",gap:"6px",overflowX:"auto",paddingBottom:"2px",scrollbarWidth:"none"}}>
+            {filterTabs.map(tab => (
               <button key={tab.key} onClick={()=>setFilter(tab.key)}
-                style={{display:"flex",alignItems:"center",gap:"6px",padding:"6px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:700,border:"none",cursor:"pointer",
+                style={{flexShrink:0,display:"flex",alignItems:"center",gap:"5px",padding:"6px 12px",borderRadius:"20px",fontSize:"11px",fontWeight:700,border:"none",cursor:"pointer",
                   background:filter===tab.key?"#fbbf24":"rgba(255,255,255,0.1)",color:filter===tab.key?"#1c1400":"rgba(255,255,255,0.6)"}}>
                 {tab.label}
-                {tab.count>0&&<span style={{borderRadius:"20px",padding:"1px 6px",fontSize:"10px",fontWeight:900,lineHeight:1,
+                {tab.count>0&&<span style={{borderRadius:"20px",padding:"1px 5px",fontSize:"10px",fontWeight:900,lineHeight:1,
                   background:filter===tab.key?"rgba(0,0,0,0.15)":"rgba(255,255,255,0.1)",color:filter===tab.key?"#1c1400":"rgba(255,255,255,0.6)"}}>{tab.count}</span>}
               </button>
             ))}
           </div>
 
-          {filtered.length===0 ? (
+          {groupedHosts.length===0 ? (
             <div style={{textAlign:"center",padding:"48px 0"}}>
               <p style={{fontSize:"36px",marginBottom:"10px"}}>{filter==="Live Now"?"📡":search?"🔎":"📭"}</p>
-              <p className="text-white/40 font-semibold">
-                {search?`No lives found for "@${search.replace(/^@/,"")}"`:filter==="Live Now"?"No one is live right now.":filter==="Coming Up"?"No upcoming lives.":"No schedules in this community yet."}
-              </p>
+              <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",fontWeight:600}}>{emptyMsg}</p>
               {!search&&filter==="All"&&<button onClick={onAddSchedule} style={{background:"none",border:"none",color:"#fbbf24",fontSize:"13px",textDecoration:"underline",cursor:"pointer",marginTop:"10px",display:"inline-block"}}>Post your schedule</button>}
             </div>
           ) : (
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))",gap:"12px"}}>
-              {filtered.map(occ => (
-                <OccurrenceCard key={occ.occurrenceId} occurrence={occ} signups={signups}
-                  onView={onView} isOwner={occ.schedule.userId===currentUser.id} onGoLive={onGoLive} />
+              {groupedHosts.map(({ schedule, occurrences }) => (
+                <HostCard
+                  key={schedule.id}
+                  schedule={schedule}
+                  occurrences={occurrences}
+                  signups={signups}
+                  onView={onView}
+                  isOwner={schedule.userId === currentUser.id}
+                  onGoLive={onGoLive}
+                />
               ))}
             </div>
           )}
