@@ -2108,7 +2108,84 @@ export default function App() {
   const [shareScheduleFor, setShareScheduleFor] = useState(null); // community to share schedule into
 
   const [tick, setTick] = useState(0);
-  useEffect(() => { const t = setInterval(()=>setTick(n=>n+1), 30000); return ()=>clearInterval(t); }, []);
+
+  // Tick every 30s for Live Now auto-detection
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Refresh all community data every 5 minutes
+  useEffect(() => {
+    if (!currentUser) return;
+    const interval = setInterval(async () => {
+      const ids = currentUser.communityIds || [];
+      if (ids.length === 0) return;
+      console.log("[REFRESH] Auto-refreshing community data...");
+      for (const communityId of ids) {
+        // Refresh schedules
+        const { data: freshSchedules } = await supabase
+          .from("schedules")
+          .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+          .eq("community_id", communityId);
+
+        if (freshSchedules) {
+          const mapped = freshSchedules.map(s => ({
+            id:           s.id,
+            userId:       s.user_id,
+            communityId:  s.community_id,
+            hostUsername: s.host_username,
+            platform:     s.platform,
+            daysOfWeek:   (s.days_of_week || []).map(Number),
+            startTime:    s.start_time ? String(s.start_time).slice(0, 5) : "12:00",
+            endTime:      s.end_time   ? String(s.end_time).slice(0, 5)   : "13:00",
+            notes:        s.notes || "",
+            manualStatus: s.manual_status,
+            createdAt:    s.created_at,
+            updatedAt:    s.updated_at,
+          }));
+          setSchedules(prev => {
+            // Merge: update existing, add new ones
+            const updated = prev.filter(s => s.communityId !== communityId);
+            return [...updated, ...mapped];
+          });
+        }
+
+        // Refresh signups for this community's schedules
+        const scheduleIds = schedules
+          .filter(s => s.communityId === communityId)
+          .map(s => s.id);
+
+        if (scheduleIds.length > 0) {
+          const { data: freshSignups } = await supabase
+            .from("signups")
+            .select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at")
+            .in("schedule_id", scheduleIds);
+
+          if (freshSignups) {
+            const mapped = freshSignups.map(sg => ({
+              id:                sg.id,
+              occurrenceId:      sg.occurrence_id,
+              scheduleId:        sg.schedule_id,
+              displayName:       sg.display_name,
+              supporterUsername: sg.supporter_username || "",
+              plannedGiftAmount: sg.planned_gift_amount,
+              comment:           sg.comment || "",
+              createdAt:         sg.created_at,
+            }));
+            setSignups(prev => {
+              const existingIds = new Set(mapped.map(s => s.id));
+              const kept = prev.filter(s => !existingIds.has(s.id));
+              return [...kept, ...mapped];
+            });
+          }
+        }
+      }
+      setTick(n => n + 1); // trigger re-render for Live Now status
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [currentUser, schedules]);
 
   // Handle browser back gesture (swipe left on iOS Safari)
   useEffect(() => {
@@ -2450,6 +2527,10 @@ async function handleLogout() {
     setCurrentUser(updated);
     setPendingUser(null);
     setActiveCommunityId(mappedCommunity.id);
+
+    // If user already has a schedule in another community, offer to share it here
+    const hasSchedule = schedules.some(s => s.userId === owner.id);
+    if (hasSchedule) setShareScheduleFor(mappedCommunity);
   }
 
   async function handleJoinAfterRegister(codeOrCommunity) {
@@ -2645,6 +2726,10 @@ async function handleLogout() {
     setUsers(p=>p.map(u=>u.id===currentUser.id?updated:u));
     setCurrentUser(updated);
     setActiveCommunityId(community.id);
+
+    // If user already has a schedule in another community, offer to share it here too
+    const hasSchedule = schedules.some(s => s.userId === currentUser.id);
+    if (hasSchedule) setShareScheduleFor(community);
   }
 
   function handleRemoveMember(communityId, userId) {
