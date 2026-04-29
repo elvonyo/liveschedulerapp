@@ -1499,6 +1499,27 @@ function HostCard({ schedule, occurrences, signups, onView, isOwner, onGoLive })
   );
 }
 
+// ─── MemberCount ──────────────────────────────────────────────────────────────
+function MemberCount({ communityId }) {
+  const [count, setCount] = useState(null);
+
+  useEffect(() => {
+    if (!communityId) return;
+    supabase
+      .from("community_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("community_id", communityId)
+      .then(({ count: c }) => setCount(c));
+  }, [communityId]);
+
+  if (count === null) return null;
+  return (
+    <span style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",fontWeight:600}}>
+      {count} member{count !== 1 ? "s" : ""}
+    </span>
+  );
+}
+
 function DashboardView({ schedules, signups, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, activeCommunityId, onSwitchCommunity }) {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
@@ -1544,7 +1565,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
   const comingUpCount = allOccurrences.filter(o => o.daysAway >= 0 && o.daysAway <= 4 && o.status !== STATUS.LIVE_NOW).length;
 
   const filterTabs = [
-    { key:"All",       label:"All",        count: communitySchedules.length },
+    { key:"All",       label:"All",        count: 0 },
     { key:"Live Now",  label:"🔴 Live",    count: liveNowCount },
     { key:"Today",     label:"📅 Today",   count: todayCount },
     { key:"Tomorrow",  label:"🌅 Tomorrow",count: tomorrowCount },
@@ -1564,7 +1585,10 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
 
       {!activeCommunityId || myGroups.length===0 ? null : (
         <>
-          <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>{activeCommunity?.name} Lives</h1>
+          <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
+            <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>{activeCommunity?.name} Lives</h1>
+            <MemberCount communityId={activeCommunityId} />
+          </div>
 
           {/* Search */}
           <div style={{position:"relative"}}>
@@ -1581,7 +1605,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
                 style={{flexShrink:0,display:"flex",alignItems:"center",gap:"5px",padding:"6px 12px",borderRadius:"20px",fontSize:"11px",fontWeight:700,border:"none",cursor:"pointer",
                   background:filter===tab.key?"#fbbf24":"rgba(255,255,255,0.1)",color:filter===tab.key?"#1c1400":"rgba(255,255,255,0.6)"}}>
                 {tab.label}
-                {tab.count>0&&<span style={{borderRadius:"20px",padding:"1px 5px",fontSize:"10px",fontWeight:900,lineHeight:1,
+                {tab.count>0&&tab.key!=="All"&&<span style={{borderRadius:"20px",padding:"1px 5px",fontSize:"10px",fontWeight:900,lineHeight:1,
                   background:filter===tab.key?"rgba(0,0,0,0.15)":"rgba(255,255,255,0.1)",color:filter===tab.key?"#1c1400":"rgba(255,255,255,0.6)"}}>{tab.count}</span>}
               </button>
             ))}
