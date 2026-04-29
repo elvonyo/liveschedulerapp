@@ -2451,19 +2451,19 @@ async function handleLogout() {
 
   async function handleJoinAfterRegister(codeOrCommunity) {
     const owner = pendingUser || currentUser;
-    if (!owner) return false;
+    if (!owner) { console.error("No owner found"); return false; }
 
-    // Accept either an invite code string or a community object
     let community = typeof codeOrCommunity === "string" ? null : codeOrCommunity;
 
     if (!community) {
-      // Look up community by invite code in Supabase
+      console.log("[JOIN] Looking up invite code:", codeOrCommunity.toUpperCase());
       const { data: found, error: findError } = await supabase
         .from("communities")
         .select("id, name, invite_code, leader_id, created_at")
         .eq("invite_code", codeOrCommunity.toUpperCase())
         .maybeSingle();
 
+      console.log("[JOIN] Community lookup result:", found?.id, "error:", findError?.message);
       if (findError || !found) return false;
 
       community = {
@@ -2473,30 +2473,38 @@ async function handleLogout() {
         leaderId: found.leader_id,
         createdAt: found.created_at,
       };
-
       setCommunities(p => p.find(c => c.id === community.id) ? p : [...p, community]);
     }
 
+    // Check if already a member
+    if (owner.communityIds?.includes(community.id)) {
+      console.log("[JOIN] Already a member");
+      setCurrentUser({ ...owner });
+      setPendingUser(null);
+      setActiveCommunityId(community.id);
+      return true;
+    }
+
+    console.log("[JOIN] Inserting community_member:", community.id, owner.id);
     const { error } = await supabase
       .from("community_members")
-      .insert({
-        community_id: community.id,
-        user_id: owner.id,
-        role: "member",
-      });
+      .insert({ community_id: community.id, user_id: owner.id, role: "member" });
+
+    console.log("[JOIN] Insert result error:", error?.message ?? "none");
 
     if (error && !error.message?.toLowerCase().includes("duplicate")) {
+      console.error("[JOIN] Failed to insert member:", error.message);
       return false;
     }
 
     const updated = { ...owner, communityIds: [...new Set([...(owner.communityIds||[]), community.id])] };
-    setUsers(p=>p.map(u=>u.id===owner.id ? updated : u));
+    setUsers(p => p.map(u => u.id === owner.id ? updated : u));
     setCurrentUser(updated);
     setPendingUser(null);
     setActiveCommunityId(community.id);
 
-    // Fetch schedules for the newly joined community
-    await fetchCommunitySchedules(community.id);
+    // Fetch schedules — don't await so it doesn't block the UI
+    fetchCommunitySchedules(community.id).catch(e => console.warn("[JOIN] Schedule fetch error:", e));
 
     return true;
   }
