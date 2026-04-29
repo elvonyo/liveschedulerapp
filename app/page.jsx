@@ -1964,7 +1964,7 @@ async function loadUserFromSupabase(authUser) {
 
     .maybeSingle();
 
-  console.log("[LOAD] Profile result:", profile?.id, "has_paid:", profile?.has_paid, "error:", profileError?.message);
+  console.log("[LOAD] Profile result:", JSON.stringify(profile), "error:", profileError?.message ?? "none");
 
   if (profileError) {
 
@@ -2074,19 +2074,15 @@ async function loadUserFromSupabase(authUser) {
     paidAt: profile.paid_at ?? null,
   };
 
+  // Set user and clear loading immediately — don't wait for communities/schedules
   setCurrentUser(appUser);
+  setAuthLoading(false);
 
   setUsers(p =>
-
     p.find(u => u.id === appUser.id)
-
       ? p.map(u => u.id === appUser.id ? appUser : u)
-
       : [appUser, ...p]
-
   );
-
-  setAuthLoading(false);
 
   return appUser;
 
