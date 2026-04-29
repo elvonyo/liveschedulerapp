@@ -885,35 +885,12 @@ function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, 
   const days      = schedule.daysOfWeek ?? (schedule.dayOfWeek != null ? [schedule.dayOfWeek] : []);
   const dayLabel  = daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : formatDate(dateObj);
   const isOwn     = schedule.userId === currentUser.id;
-
-  // All upcoming occurrences for this schedule (for date picker)
-  const allOcc = useMemo(() => expandOccurrences(schedule), [schedule]);
-
-  // Selected dates — default to the occurrence that was tapped
-  const [selectedIds, setSelectedIds] = useState([occurrenceId]);
-
-  function toggleDate(id) {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  }
-
-  // Signups across all occurrences of this schedule
-  const allSignups   = signups.filter(sg => sg.scheduleId === schedule.id);
-  const totalSignups = allSignups.length;
-  const totalGift    = allSignups.reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
-
-  // Check if user already signed up for the primary occurrence
-  const mySignup = signups.filter(sg => sg.occurrenceId === occurrenceId)
-    .find(sg => sg.displayName.toLowerCase() === currentUser.username.toLowerCase() ||
-      sg.supporterUsername.replace(/^@/,"").toLowerCase() === currentUser.username.toLowerCase());
-
-  // Handle multi-date signup
-  function handleMultiSignup(signupData) {
-    selectedIds.forEach(selId => {
-      onSignup({ ...signupData, id: uid(), occurrenceId: selId });
-    });
-  }
+  const ss        = signups.filter(sg => sg.occurrenceId === occurrenceId);
+  const totalGift = ss.reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
+  const mySignup  = ss.find(sg =>
+    sg.displayName.toLowerCase() === currentUser.username.toLowerCase() ||
+    sg.supporterUsername.replace(/^@/,"").toLowerCase() === currentUser.username.toLowerCase()
+  );
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
@@ -926,46 +903,18 @@ function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, 
           <span style={{color:"rgba(255,255,255,0.7)",fontSize:"12px"}}>{platformIcon(schedule.platform)} {schedule.platform}</span>
         </div>
         <h2 style={{color:"#fff",fontWeight:900,fontSize:"22px",margin:0}}>@{schedule.hostUsername}</h2>
-        <p style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",margin:"4px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
-        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0"}}>Goes live every {formatDays(days)}</p>
+        <p style={{color:"rgba(255,255,255,0.9)",fontWeight:700,fontSize:"15px",margin:"4px 0 0"}}>{dayLabel} · {formatDate(dateObj)}</p>
+        <p style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",margin:"2px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
+        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0"}}>Repeats every {formatDays(days)}</p>
         {schedule.notes && <div style={{marginTop:"10px",background:"rgba(0,0,0,0.2)",borderRadius:"10px",padding:"10px 14px"}}><p style={{color:"rgba(255,255,255,0.9)",fontSize:"13px",margin:0}}>{schedule.notes}</p></div>}
       </div>
 
       {/* Stats */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-        <Pill label="Total Supporters" value={totalSignups} />
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
+        <Pill label="Signed Up" value={ss.length} />
+        <Pill label="Date" value={dayLabel} />
         <Pill label="🎁 Expected" value={totalGift>0?`$${totalGift}`:"—"} accent={totalGift>0} />
       </div>
-
-      {/* Date picker — only show for supporters, not the host */}
-      {!isOwn && status !== STATUS.CANCELLED && !mySignup && (
-        <div style={IS.card}>
-          <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Which day(s) will you attend?</h3>
-          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:"4px 0 0"}}>Select one or more — you can always change later.</p>
-          <div style={{display:"flex",flexDirection:"column",gap:"6px",marginTop:"4px"}}>
-            {allOcc.filter(o => o.status !== STATUS.CANCELLED && o.status !== STATUS.COMPLETED).map(o => {
-              const dl = o.daysAway === 0 ? "Today" : o.daysAway === 1 ? "Tomorrow" : formatDate(o.dateObj);
-              const selected = selectedIds.includes(o.occurrenceId);
-              const isLive   = o.status === STATUS.LIVE_NOW;
-              return (
-                <button key={o.occurrenceId} onClick={() => toggleDate(o.occurrenceId)}
-                  style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:"12px",border:`2px solid ${selected?"#fbbf24":"rgba(255,255,255,0.1)"}`,background:selected?"rgba(251,191,36,0.12)":"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left"}}>
-                  <div>
-                    <p style={{color:selected?"#fbbf24":"#fff",fontWeight:700,fontSize:"13px",margin:0}}>
-                      {dl}
-                      {isLive && <span style={{background:"#ef4444",color:"#fff",fontSize:"9px",fontWeight:900,padding:"1px 6px",borderRadius:"20px",marginLeft:"6px"}}>LIVE</span>}
-                    </p>
-                    <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",margin:"2px 0 0"}}>{formatDate(o.dateObj)} · {formatTime(schedule.startTime)}</p>
-                  </div>
-                  <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selected?"#fbbf24":"rgba(255,255,255,0.3)"}`,background:selected?"#fbbf24":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    {selected && <span style={{color:"#1c1400",fontSize:"12px",fontWeight:900}}>✓</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Signup */}
       {status !== STATUS.CANCELLED && (
@@ -978,30 +927,16 @@ function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, 
           )
           : mySignup
             ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
-            : <SignupForm
-                occurrenceId={occurrenceId}
-                scheduleId={schedule.id}
-                currentUser={currentUser}
-                selectedCount={selectedIds.length}
-                onSubmit={handleMultiSignup}
-              />
+            : <SignupForm occurrenceId={occurrenceId} scheduleId={schedule.id} currentUser={currentUser} onSubmit={onSignup} />
       )}
 
-      {/* Who's coming — show per selected date or all */}
+      {/* Who's Coming */}
       <div style={IS.card}>
-        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Who's Coming</h3>
-        {allOcc.filter(o => o.status !== STATUS.CANCELLED).map(o => {
-          const oSignups = signups.filter(sg => sg.occurrenceId === o.occurrenceId);
-          if (oSignups.length === 0) return null;
-          const dl = o.daysAway === 0 ? "Today" : o.daysAway === 1 ? "Tomorrow" : formatDate(o.dateObj);
-          return (
-            <div key={o.occurrenceId} style={{marginBottom:"10px"}}>
-              <p style={{color:"#fbbf24",fontSize:"11px",fontWeight:700,margin:"0 0 6px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{dl} — {oSignups.length} supporter{oSignups.length!==1?"s":""}</p>
-              {oSignups.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
-            </div>
-          );
-        })}
-        {allSignups.length === 0 && <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No one yet — be the first! 🌟</p>}
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Who's Coming ({ss.length})</h3>
+        {ss.length===0
+          ? <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No one yet — be the first! 🌟</p>
+          : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)
+        }
       </div>
     </div>
   );
@@ -1580,41 +1515,23 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
     return occ.sort((a,b) => { const oa=order[a.status]??9, ob=order[b.status]??9; return oa!==ob?oa-ob:a.dateObj-b.dateObj; });
   }, [communitySchedules, tick]);
 
-  // Group occurrences by schedule (one card per host)
-  const groupedHosts = useMemo(() => {
+  // Filter occurrences for display — one card per occurrence
+  const filteredOcc = useMemo(() => {
     const now = new Date();
-    const todayStr = now.toDateString();
+    const todayStr     = now.toDateString();
     const tomorrowDate = new Date(now); tomorrowDate.setDate(now.getDate() + 1);
-    const tomorrowStr = tomorrowDate.toDateString();
+    const tomorrowStr  = tomorrowDate.toDateString();
 
-    // Apply filter first
-    let filtered = allOccurrences;
-    if (filter === "Live Now")  filtered = filtered.filter(o => o.status === STATUS.LIVE_NOW);
-    if (filter === "Today")     filtered = filtered.filter(o => o.dateObj.toDateString() === todayStr);
-    if (filter === "Tomorrow")  filtered = filtered.filter(o => o.dateObj.toDateString() === tomorrowStr);
-    if (filter === "Coming Up") filtered = filtered.filter(o => o.daysAway >= 0 && o.daysAway <= 4 && o.status !== STATUS.LIVE_NOW);
+    let list = allOccurrences;
+    if (filter === "Live Now")  list = list.filter(o => o.status === STATUS.LIVE_NOW);
+    if (filter === "Today")     list = list.filter(o => o.dateObj.toDateString() === todayStr);
+    if (filter === "Tomorrow")  list = list.filter(o => o.dateObj.toDateString() === tomorrowStr);
+    if (filter === "Coming Up") list = list.filter(o => o.daysAway >= 0 && o.daysAway <= 4 && o.status !== STATUS.LIVE_NOW);
     if (search.trim()) {
       const q = search.trim().replace(/^@/,"").toLowerCase();
-      filtered = filtered.filter(o => o.schedule.hostUsername.toLowerCase().includes(q));
+      list = list.filter(o => o.schedule.hostUsername.toLowerCase().includes(q));
     }
-
-    // Group by scheduleId — one entry per host
-    const map = new Map();
-    for (const occ of filtered) {
-      if (!map.has(occ.scheduleId)) {
-        map.set(occ.scheduleId, { schedule: occ.schedule, occurrences: [] });
-      }
-      map.get(occ.scheduleId).occurrences.push(occ);
-    }
-
-    // Sort groups: Live Now first, then by soonest occurrence
-    return Array.from(map.values()).sort((a, b) => {
-      const aLive = a.occurrences.some(o => o.status === STATUS.LIVE_NOW);
-      const bLive = b.occurrences.some(o => o.status === STATUS.LIVE_NOW);
-      if (aLive && !bLive) return -1;
-      if (!aLive && bLive) return 1;
-      return (a.occurrences[0]?.daysAway ?? 99) - (b.occurrences[0]?.daysAway ?? 99);
-    });
+    return list;
   }, [allOccurrences, filter, search]);
 
   const liveNowCount  = communitySchedules.filter(s => effectiveStatus(s) === STATUS.LIVE_NOW).length;
@@ -1667,7 +1584,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
             ))}
           </div>
 
-          {groupedHosts.length===0 ? (
+          {filteredOcc.length===0 ? (
             <div style={{textAlign:"center",padding:"48px 0"}}>
               <p style={{fontSize:"36px",marginBottom:"10px"}}>{filter==="Live Now"?"📡":search?"🔎":"📭"}</p>
               <p style={{color:"rgba(255,255,255,0.4)",fontSize:"14px",fontWeight:600}}>{emptyMsg}</p>
@@ -1675,14 +1592,13 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
             </div>
           ) : (
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))",gap:"12px"}}>
-              {groupedHosts.map(({ schedule, occurrences }) => (
-                <HostCard
-                  key={schedule.id}
-                  schedule={schedule}
-                  occurrences={occurrences}
+              {filteredOcc.map(occ => (
+                <OccurrenceCard
+                  key={occ.occurrenceId}
+                  occurrence={occ}
                   signups={signups}
                   onView={onView}
-                  isOwner={schedule.userId === currentUser.id}
+                  isOwner={occ.schedule.userId === currentUser.id}
                   onGoLive={onGoLive}
                 />
               ))}
@@ -2578,6 +2494,10 @@ async function handleLogout() {
     setCurrentUser(updated);
     setPendingUser(null);
     setActiveCommunityId(community.id);
+
+    // Fetch schedules for the newly joined community
+    await fetchCommunitySchedules(community.id);
+
     return true;
   }
 
@@ -2587,6 +2507,38 @@ async function handleLogout() {
   }
 
   // ── Community ──
+  // Fetch and merge schedules for a newly joined community
+  async function fetchCommunitySchedules(communityId) {
+    const { data, error } = await supabase
+      .from("schedules")
+      .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+      .eq("community_id", communityId);
+
+    if (error) { console.warn("Schedule fetch error:", error.message); return; }
+
+    const mapped = (data || []).map(s => ({
+      id:           s.id,
+      userId:       s.user_id,
+      communityId:  s.community_id,
+      hostUsername: s.host_username,
+      platform:     s.platform,
+      daysOfWeek:   s.days_of_week || [],
+      startTime:    s.start_time ? String(s.start_time).slice(0, 5) : "12:00",
+      endTime:      s.end_time   ? String(s.end_time).slice(0, 5)   : "13:00",
+      notes:        s.notes || "",
+      manualStatus: s.manual_status,
+      createdAt:    s.created_at,
+      updatedAt:    s.updated_at,
+    }));
+
+    // Merge into state — don't duplicate existing ones
+    setSchedules(prev => {
+      const existingIds = new Set(prev.map(s => s.id));
+      const fresh = mapped.filter(s => !existingIds.has(s.id));
+      return [...prev, ...fresh];
+    });
+  }
+
   async function handleJoinCommunity(code) {
     let community = communities.find(c=>c.inviteCode.toUpperCase()===code.toUpperCase());
 
@@ -2626,6 +2578,9 @@ async function handleLogout() {
     setUsers(p=>p.map(u=>u.id===currentUser.id?updated:u));
     setCurrentUser(updated);
     setActiveCommunityId(community.id);
+
+    // Fetch schedules for the newly joined community immediately
+    await fetchCommunitySchedules(community.id);
 
     // If user has an existing schedule, ask if they want to add it to this community too
     const hasSchedule = schedules.some(s => s.userId === currentUser.id);
