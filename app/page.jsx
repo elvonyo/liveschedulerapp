@@ -748,7 +748,7 @@ function OccurrenceCard({ occurrence, signups, onView, isOwner, onGoLive }) {
 
 // ─── Signup Form ───────────────────────────────────────────────────────────────
 
-function SignupForm({ occurrenceId, scheduleId, currentUser, onSubmit }) {
+function SignupForm({ occurrenceId, scheduleId, currentUser, onSubmit, selectedCount }) {
   const [displayName,       setDisplayName]       = useState(currentUser?.username || "");
   const [supporterUsername, setSupporterUsername] = useState(currentUser ? `@${currentUser.username}` : "");
   const [gift,    setGift]    = useState("");
@@ -774,7 +774,14 @@ function SignupForm({ occurrenceId, scheduleId, currentUser, onSubmit }) {
 
   return (
     <div style={IS.card}>
-      <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Sign Up to Support</h3>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"6px"}}>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Sign Up to Support</h3>
+        {selectedCount > 0 && (
+          <span style={{background:"rgba(251,191,36,0.15)",color:"#fbbf24",fontSize:"11px",fontWeight:700,padding:"3px 10px",borderRadius:"20px"}}>
+            {selectedCount} day{selectedCount!==1?"s":""} selected
+          </span>
+        )}
+      </div>
       <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:0}}>⚠️ Gift amounts are for planning only — no payment is taken here.</p>
       {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
       <div>
@@ -874,35 +881,95 @@ function MySignupPanel({ signup, onUpdate, onRemove }) {
 
 function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, onUpdateSignup, onRemoveSignup }) {
   const { schedule, dateObj, daysAway, occurrenceId } = occurrence;
-  const status = effectiveStatus(schedule, occurrenceId);
-  const ss        = signups.filter(sg => sg.occurrenceId === occurrenceId);
-  const totalGift = ss.reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
+  const status    = effectiveStatus(schedule, occurrenceId);
   const days      = schedule.daysOfWeek ?? (schedule.dayOfWeek != null ? [schedule.dayOfWeek] : []);
   const dayLabel  = daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : formatDate(dateObj);
-  // [DB INTEGRATION] Replace with server-side query: SELECT * FROM signups WHERE occurrenceId=? AND userId=?
-  const mySignup  = ss.find(sg => sg.displayName.toLowerCase()===currentUser.username.toLowerCase() || sg.supporterUsername.replace(/^@/,"").toLowerCase()===currentUser.username.toLowerCase());
+  const isOwn     = schedule.userId === currentUser.id;
+
+  // All upcoming occurrences for this schedule (for date picker)
+  const allOcc = useMemo(() => expandOccurrences(schedule), [schedule]);
+
+  // Selected dates — default to the occurrence that was tapped
+  const [selectedIds, setSelectedIds] = useState([occurrenceId]);
+
+  function toggleDate(id) {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
+
+  // Signups across all occurrences of this schedule
+  const allSignups   = signups.filter(sg => sg.scheduleId === schedule.id);
+  const totalSignups = allSignups.length;
+  const totalGift    = allSignups.reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
+
+  // Check if user already signed up for the primary occurrence
+  const mySignup = signups.filter(sg => sg.occurrenceId === occurrenceId)
+    .find(sg => sg.displayName.toLowerCase() === currentUser.username.toLowerCase() ||
+      sg.supporterUsername.replace(/^@/,"").toLowerCase() === currentUser.username.toLowerCase());
+
+  // Handle multi-date signup
+  function handleMultiSignup(signupData) {
+    selectedIds.forEach(selId => {
+      onSignup({ ...signupData, id: uid(), occurrenceId: selId });
+    });
+  }
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
       <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:"4px",background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontWeight:700,cursor:"pointer",padding:0,marginBottom:"2px"}}>← Back</button>
+
+      {/* Hero */}
       <div style={{background:"linear-gradient(135deg,#e67e22,#c0392b)",borderRadius:"18px",padding:"20px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",flexWrap:"wrap"}}>
           <Badge status={status} />
           <span style={{color:"rgba(255,255,255,0.7)",fontSize:"12px"}}>{platformIcon(schedule.platform)} {schedule.platform}</span>
         </div>
         <h2 style={{color:"#fff",fontWeight:900,fontSize:"22px",margin:0}}>@{schedule.hostUsername}</h2>
-        <p style={{color:"rgba(255,255,255,0.9)",fontWeight:700,fontSize:"15px",margin:"4px 0 0"}}>{dayLabel} · {formatDate(dateObj)}</p>
-        <p style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",margin:"2px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
-        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0"}}>Repeats every {formatDays(days)}</p>
+        <p style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",margin:"4px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
+        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0"}}>Goes live every {formatDays(days)}</p>
         {schedule.notes && <div style={{marginTop:"10px",background:"rgba(0,0,0,0.2)",borderRadius:"10px",padding:"10px 14px"}}><p style={{color:"rgba(255,255,255,0.9)",fontSize:"13px",margin:0}}>{schedule.notes}</p></div>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
-        <Pill label="Signed Up" value={ss.length} />
-        <Pill label="Date" value={dayLabel} />
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+        <Pill label="Total Supporters" value={totalSignups} />
         <Pill label="🎁 Expected" value={totalGift>0?`$${totalGift}`:"—"} accent={totalGift>0} />
       </div>
+
+      {/* Date picker — only show for supporters, not the host */}
+      {!isOwn && status !== STATUS.CANCELLED && !mySignup && (
+        <div style={IS.card}>
+          <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Which day(s) will you attend?</h3>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:"4px 0 0"}}>Select one or more — you can always change later.</p>
+          <div style={{display:"flex",flexDirection:"column",gap:"6px",marginTop:"4px"}}>
+            {allOcc.filter(o => o.status !== STATUS.CANCELLED && o.status !== STATUS.COMPLETED).map(o => {
+              const dl = o.daysAway === 0 ? "Today" : o.daysAway === 1 ? "Tomorrow" : formatDate(o.dateObj);
+              const selected = selectedIds.includes(o.occurrenceId);
+              const isLive   = o.status === STATUS.LIVE_NOW;
+              return (
+                <button key={o.occurrenceId} onClick={() => toggleDate(o.occurrenceId)}
+                  style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:"12px",border:`2px solid ${selected?"#fbbf24":"rgba(255,255,255,0.1)"}`,background:selected?"rgba(251,191,36,0.12)":"rgba(255,255,255,0.04)",cursor:"pointer",textAlign:"left"}}>
+                  <div>
+                    <p style={{color:selected?"#fbbf24":"#fff",fontWeight:700,fontSize:"13px",margin:0}}>
+                      {dl}
+                      {isLive && <span style={{background:"#ef4444",color:"#fff",fontSize:"9px",fontWeight:900,padding:"1px 6px",borderRadius:"20px",marginLeft:"6px"}}>LIVE</span>}
+                    </p>
+                    <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",margin:"2px 0 0"}}>{formatDate(o.dateObj)} · {formatTime(schedule.startTime)}</p>
+                  </div>
+                  <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selected?"#fbbf24":"rgba(255,255,255,0.3)"}`,background:selected?"#fbbf24":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {selected && <span style={{color:"#1c1400",fontSize:"12px",fontWeight:900}}>✓</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Signup */}
       {status !== STATUS.CANCELLED && (
-        schedule.userId === currentUser.id
+        isOwn
           ? (
             <div style={{background:"rgba(251,191,36,0.12)",border:"1px solid rgba(251,191,36,0.25)",borderRadius:"16px",padding:"18px",textAlign:"center"}}>
               <p style={{color:"#fbbf24",fontWeight:900,fontSize:"14px",margin:"0 0 4px"}}>This is your live</p>
@@ -911,23 +978,30 @@ function OccurrenceDetail({ occurrence, signups, currentUser, onBack, onSignup, 
           )
           : mySignup
             ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
-            : <SignupForm occurrenceId={occurrenceId} scheduleId={schedule.id} currentUser={currentUser} onSubmit={onSignup} />
+            : <SignupForm
+                occurrenceId={occurrenceId}
+                scheduleId={schedule.id}
+                currentUser={currentUser}
+                selectedCount={selectedIds.length}
+                onSubmit={handleMultiSignup}
+              />
       )}
+
+      {/* Who's coming — show per selected date or all */}
       <div style={IS.card}>
-        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Who's Coming ({ss.length})</h3>
-        {ss.length===0 ? <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No one yet — be the first! 🌟</p> : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
-        
-        <div style={{display:"flex",gap:"8px",justifyContent:"center",marginTop:"12px",flexWrap:"wrap"}}>
-  {status !== STATUS.CANCELLED ? (
-    <button onClick={() => onCancelOccurrence(schedule.id, occurrenceId)} style={{background:"rgba(239,68,68,0.18)",color:"#f87171",fontSize:"12px",fontWeight:800,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>
-      Cancel This Live Only
-    </button>
-  ) : (
-    <button onClick={() => onResetOccurrence(schedule.id, occurrenceId)} style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:"12px",fontWeight:800,border:"none",borderRadius:"10px",padding:"8px 12px",cursor:"pointer"}}>
-      Reset This Live
-    </button>
-  )}
-        </div>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Who's Coming</h3>
+        {allOcc.filter(o => o.status !== STATUS.CANCELLED).map(o => {
+          const oSignups = signups.filter(sg => sg.occurrenceId === o.occurrenceId);
+          if (oSignups.length === 0) return null;
+          const dl = o.daysAway === 0 ? "Today" : o.daysAway === 1 ? "Tomorrow" : formatDate(o.dateObj);
+          return (
+            <div key={o.occurrenceId} style={{marginBottom:"10px"}}>
+              <p style={{color:"#fbbf24",fontSize:"11px",fontWeight:700,margin:"0 0 6px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{dl} — {oSignups.length} supporter{oSignups.length!==1?"s":""}</p>
+              {oSignups.map(sg => <SupporterRow key={sg.id} signup={sg} />)}
+            </div>
+          );
+        })}
+        {allSignups.length === 0 && <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No one yet — be the first! 🌟</p>}
       </div>
     </div>
   );
@@ -1474,7 +1548,7 @@ function HostCard({ schedule, occurrences, signups, onView, isOwner, onGoLive })
 
       {/* Action */}
       <div style={{display:"flex",gap:"6px",marginTop:"auto"}}>
-        <button onClick={() => onView(primary.occurrenceId)}
+        <button onClick={() => onView(primary.occurrenceId)}  /* opens detail for this host's next occurrence */
           style={{flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px",cursor:"pointer"}}>
           View & Sign Up
         </button>
