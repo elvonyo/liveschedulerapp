@@ -1952,6 +1952,8 @@ async function loadUserFromSupabase(authUser) {
 
   if (!authUser) { setAuthLoading(false); return null; }
 
+  console.log("[LOAD] Loading profile for user:", authUser.id);
+
   let { data: profile, error: profileError } = await supabase
 
     .from("profiles")
@@ -1961,6 +1963,8 @@ async function loadUserFromSupabase(authUser) {
     .eq("id", authUser.id)
 
     .maybeSingle();
+
+  console.log("[LOAD] Profile result:", profile?.id, "has_paid:", profile?.has_paid, "error:", profileError?.message);
 
   if (profileError) {
 
@@ -2097,6 +2101,7 @@ useEffect(() => {
   }, 8000);
 
   const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("[AUTH]", event, "user:", session?.user?.id ?? "none");
     if (!active) return;
 
     if (event === "SIGNED_OUT") {
@@ -2110,7 +2115,8 @@ useEffect(() => {
 
     if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") && session?.user) {
       try {
-        await loadUserFromSupabase(session.user);
+        const user = await loadUserFromSupabase(session.user);
+        console.log("[AUTH] loadUserFromSupabase result:", user?.id, "hasPaid:", user?.hasPaid);
       } catch(e) {
         console.error("auth state error:", e);
       } finally {
@@ -2121,6 +2127,7 @@ useEffect(() => {
 
     // No session — not logged in
     if (event === "INITIAL_SESSION" && !session) {
+      console.log("[AUTH] No session found — showing login");
       setAuthLoading(false);
     }
   });
