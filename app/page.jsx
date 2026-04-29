@@ -116,7 +116,10 @@ function expandOccurrences(schedule) {
       const isPast   = isToday && !isLive && nowMins >= (overnight ? endMins - 1440 : endMins) && nowMins >= startMins;
 
       if (isPast && !isLive) continue;
-      const daysAway = Math.round((base - now) / 86400000);
+      // Calculate daysAway by comparing calendar dates, not timestamps
+      // This avoids rounding issues caused by time-of-day differences
+      const nowMidnight = new Date(now); nowMidnight.setHours(0,0,0,0);
+      const daysAway = Math.round((base - nowMidnight) / 86400000);
       if (w === 0 && daysAway > LOOK_AHEAD_DAYS && !isLive) continue;
       let status = STATUS.UPCOMING;
       if (schedule.manualStatus === STATUS.CANCELLED) status = STATUS.CANCELLED;
@@ -2255,7 +2258,7 @@ async function loadUserFromSupabase(authUser) {
         communityId: s.community_id,
         hostUsername: s.host_username,
         platform: s.platform,
-        daysOfWeek: s.days_of_week || [],
+        daysOfWeek: (s.days_of_week || []).map(Number),
         startTime: s.start_time ? String(s.start_time).slice(0, 5) : "12:00",
         endTime: s.end_time ? String(s.end_time).slice(0, 5) : "13:00",
         notes: s.notes || "",
@@ -2530,7 +2533,7 @@ async function handleLogout() {
       communityId:  s.community_id,
       hostUsername: s.host_username,
       platform:     s.platform,
-      daysOfWeek:   s.days_of_week || [],
+      daysOfWeek:   (s.days_of_week || []).map(Number),
       startTime:    s.start_time ? String(s.start_time).slice(0, 5) : "12:00",
       endTime:      s.end_time   ? String(s.end_time).slice(0, 5)   : "13:00",
       notes:        s.notes || "",
@@ -2708,7 +2711,7 @@ async function handleLogout() {
       communityId: savedSchedule.community_id,
       hostUsername: savedSchedule.host_username,
       platform: savedSchedule.platform,
-      daysOfWeek: savedSchedule.days_of_week || [],
+      daysOfWeek: (savedSchedule.days_of_week || []).map(Number),
       startTime: savedSchedule.start_time ? String(savedSchedule.start_time).slice(0, 5) : "12:00",
       endTime: savedSchedule.end_time ? String(savedSchedule.end_time).slice(0, 5) : "13:00",
       notes: savedSchedule.notes || "",
