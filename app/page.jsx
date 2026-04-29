@@ -1914,7 +1914,7 @@ export default function App() {
   const [activeId,    setActiveId]    = useState(null);
   const [activeCommunityId, setActiveCommunityId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const sessionRestoredRef = React.useRef(false);
+  const sessionRestoredRef = useRef(false);
 
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(()=>setTick(n=>n+1), 30000); return ()=>clearInterval(t); }, []);
