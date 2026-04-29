@@ -1918,6 +1918,19 @@ export default function App() {
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(()=>setTick(n=>n+1), 30000); return ()=>clearInterval(t); }, []);
 
+  // Handle browser back gesture (swipe left on iOS Safari)
+  useEffect(() => {
+    function handlePopState(e) {
+      // If we were on the detail view and user swiped back, go to dashboard
+      if (view === VIEWS.DETAIL) {
+        setView(VIEWS.DASHBOARD);
+        setActiveId(null);
+      }
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [view]);
+
   // Set default active community when user logs in
   useEffect(() => {
     if (currentUser && !activeCommunityId) {
@@ -2567,7 +2580,7 @@ if (!currentUser && !pendingUser) return (
               onSwitchCommunity={id=>{ setActiveCommunityId(id); setView(VIEWS.DASHBOARD); }}
               onJoinCommunity={handleJoinCommunity}
               onCreateCommunity={handleCreateFromDashboard}
-              onView={id=>{ setActiveId(id); setView(VIEWS.DETAIL); }}
+              onView={id=>{ setActiveId(id); setView(VIEWS.DETAIL); window.history.pushState({ view: VIEWS.DETAIL, id }, "", `#live-${id}`); }}
               onGoLive={handleGoLive}
               onAddSchedule={()=>setView(VIEWS.MY)}
             />
@@ -2578,7 +2591,7 @@ if (!currentUser && !pendingUser) return (
               occurrence={activeOccurrence}
               signups={signups}
               currentUser={currentUser}
-              onBack={()=>{ setView(VIEWS.DASHBOARD); setActiveId(null); }}
+              onBack={()=>{ if (window.history.state?.view === VIEWS.DETAIL) { window.history.back(); } else { setView(VIEWS.DASHBOARD); setActiveId(null); } }}
               onSignup={handleSignup}
               onUpdateSignup={handleUpdateSignup}
               onRemoveSignup={handleRemoveSignup}
