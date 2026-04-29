@@ -595,7 +595,58 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
 
 // ─── Community Switcher ────────────────────────────────────────────────────────
 
-function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCreate }) {
+// ─── Manage Community Panel ────────────────────────────────────────────────────
+function ManageCommunityPanel({ community, isLeader, onLeave, onDelete, onClose }) {
+  const [confirm, setConfirm] = useState(false);
+
+  const action    = isLeader ? "delete" : "leave";
+  const actionLabel = isLeader ? "Delete Community" : "Leave Community";
+  const icon      = isLeader ? "🗑️" : "🚪";
+  const warningMsg = isLeader
+    ? `Deleting "${community.name}" is permanent. All members will lose access, all schedules will be removed, and this community cannot be recovered.`
+    : `You will be removed from "${community.name}" and will no longer see its live schedules. You can rejoin later with an invite code.`;
+  const confirmLabel = isLeader ? "Yes, Delete Forever" : "Yes, Leave Community";
+
+  if (confirm) return (
+    <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+      <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"12px",padding:"14px"}}>
+        <p style={{color:"#f87171",fontWeight:900,fontSize:"14px",margin:"0 0 6px"}}>⚠️ This cannot be undone</p>
+        <p style={{color:"rgba(255,255,255,0.6)",fontSize:"13px",margin:0,lineHeight:1.5}}>{warningMsg}</p>
+      </div>
+      <div style={{display:"flex",gap:"8px"}}>
+        <button onClick={() => setConfirm(false)}
+          style={{flex:1,background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"13px",border:"none",borderRadius:"10px",padding:"11px",cursor:"pointer"}}>
+          Cancel
+        </button>
+        <button onClick={isLeader ? onDelete : onLeave}
+          style={{flex:1,background:"#ef4444",color:"#fff",fontWeight:900,fontSize:"13px",border:"none",borderRadius:"10px",padding:"11px",cursor:"pointer"}}>
+          {confirmLabel}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <p style={{color:"#fff",fontWeight:900,fontSize:"14px",margin:0}}>👥 {community.name}</p>
+        <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:"14px"}}>✕</button>
+      </div>
+      <button onClick={() => setConfirm(true)}
+        style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:"12px",padding:"12px 14px",cursor:"pointer",textAlign:"left"}}>
+        <span style={{fontSize:"18px"}}>{icon}</span>
+        <div>
+          <p style={{color:"#f87171",fontWeight:700,fontSize:"13px",margin:0}}>{actionLabel}</p>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",margin:"2px 0 0"}}>
+            {isLeader ? "Permanently removes this community" : "You can rejoin with an invite code"}
+          </p>
+        </div>
+      </button>
+    </div>
+  );
+}
+
+function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCreate, onLeave, onDelete, currentUserId }) {
   const [panel,         setPanel]         = useState(null); // null | "join" | "create"
   const [code,          setCode]          = useState("");
   const [communityName, setCommunityName] = useState("");
@@ -626,8 +677,22 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
     btnC:  {flex:1,background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"13px",border:"none",borderRadius:"10px",padding:"10px",cursor:"pointer"},
     btnA:  {flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"13px",border:"none",borderRadius:"10px",padding:"10px",cursor:"pointer"},
   };
+  // Check if panel is a manage panel for a specific community
+  const managingGroup = panel?.startsWith("manage-")
+    ? myGroups.find(g => g.id === panel.replace("manage-", ""))
+    : null;
+
   const panelEl = panel && (
     <div style={S.panelWrap}>
+      {managingGroup && (
+        <ManageCommunityPanel
+          community={managingGroup}
+          isLeader={managingGroup.leaderId === currentUserId}
+          onLeave={() => { onLeave(managingGroup.id); closePanel(); }}
+          onDelete={() => { onDelete(managingGroup.id); closePanel(); }}
+          onClose={closePanel}
+        />
+      )}
       {panel === "join" && <>
         <p style={S.title}>Join a Community</p>
         <p style={S.sub}>Enter the invite code from your community leader.</p>
@@ -682,10 +747,18 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
     <div>
       <div style={{display:"flex",gap:"8px",overflowX:"auto",paddingBottom:"4px",scrollbarWidth:"none"}}>
         {myGroups.map(g => (
-          <button key={g.id} onClick={() => { onSwitch(g.id); closePanel(); }}
+          <button key={g.id}
+            onClick={() => {
+              if (activeCommunityId === g.id) {
+                setPanel(panel === `manage-${g.id}` ? null : `manage-${g.id}`);
+              } else {
+                onSwitch(g.id); closePanel();
+              }
+            }}
             style={{flexShrink:0,display:"flex",alignItems:"center",gap:"6px",padding:"7px 14px",borderRadius:"20px",fontSize:"12px",fontWeight:900,border:"none",cursor:"pointer",
               background:activeCommunityId===g.id?"#fbbf24":"rgba(255,255,255,0.1)",color:activeCommunityId===g.id?"#1c1400":"rgba(255,255,255,0.7)"}}>
             👥 {g.name}
+            {activeCommunityId===g.id && <span style={{fontSize:"10px",opacity:0.7}}>▾</span>}
           </button>
         ))}
         <button onClick={() => setPanel(panel==="join"?null:"join")}
@@ -1520,7 +1593,7 @@ function MemberCount({ communityId }) {
   );
 }
 
-function DashboardView({ schedules, signups, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, activeCommunityId, onSwitchCommunity }) {
+function DashboardView({ schedules, signups, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, onLeaveCommunity, onDeleteCommunity, activeCommunityId, onSwitchCommunity }) {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
@@ -1581,7 +1654,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
-      <CommunitySwitcher myGroups={myGroups} activeCommunityId={activeCommunityId} onSwitch={onSwitchCommunity} onJoin={onJoinCommunity} onCreate={onCreateCommunity} />
+      <CommunitySwitcher myGroups={myGroups} activeCommunityId={activeCommunityId} onSwitch={onSwitchCommunity} onJoin={onJoinCommunity} onCreate={onCreateCommunity} onLeave={onLeaveCommunity} onDelete={onDeleteCommunity} currentUserId={currentUser.id} />
 
       {!activeCommunityId || myGroups.length===0 ? null : (
         <>
@@ -2757,8 +2830,49 @@ async function handleLogout() {
   }
 
   function handleRemoveMember(communityId, userId) {
-    // [DB INTEGRATION] DELETE from community_members table
     setUsers(p=>p.map(u=>u.id===userId?{...u,communityIds:(u.communityIds||[]).filter(id=>id!==communityId)}:u));
+  }
+
+  async function handleLeaveCommunity(communityId) {
+    const { error } = await supabase
+      .from("community_members")
+      .delete()
+      .eq("community_id", communityId)
+      .eq("user_id", currentUser.id);
+
+    if (error) { alert("Could not leave community: " + error.message); return; }
+
+    const updated = { ...currentUser, communityIds: (currentUser.communityIds||[]).filter(id => id !== communityId) };
+    setUsers(p => p.map(u => u.id === currentUser.id ? updated : u));
+    setCurrentUser(updated);
+
+    // Switch to another community if available
+    const remaining = updated.communityIds;
+    setActiveCommunityId(remaining.length > 0 ? remaining[0] : null);
+
+    // Remove schedules for this community from state
+    setSchedules(p => p.filter(s => s.communityId !== communityId));
+    setCommunities(p => p.filter(c => c.id !== communityId));
+  }
+
+  async function handleDeleteCommunity(communityId) {
+    // Delete all schedules in this community
+    await supabase.from("schedules").delete().eq("community_id", communityId);
+    // Delete all members
+    await supabase.from("community_members").delete().eq("community_id", communityId);
+    // Delete the community itself
+    const { error } = await supabase.from("communities").delete().eq("id", communityId);
+
+    if (error) { alert("Could not delete community: " + error.message); return; }
+
+    const updated = { ...currentUser, communityIds: (currentUser.communityIds||[]).filter(id => id !== communityId) };
+    setUsers(p => p.map(u => u.id === currentUser.id ? updated : u));
+    setCurrentUser(updated);
+
+    const remaining = updated.communityIds;
+    setActiveCommunityId(remaining.length > 0 ? remaining[0] : null);
+    setSchedules(p => p.filter(s => s.communityId !== communityId));
+    setCommunities(p => p.filter(c => c.id !== communityId));
   }
 
   // ── Schedules ──
@@ -2983,6 +3097,8 @@ if (!currentUser && !pendingUser) return (
               onSwitchCommunity={id=>{ setActiveCommunityId(id); setView(VIEWS.DASHBOARD); }}
               onJoinCommunity={handleJoinCommunity}
               onCreateCommunity={handleCreateFromDashboard}
+              onLeaveCommunity={handleLeaveCommunity}
+              onDeleteCommunity={handleDeleteCommunity}
               onView={id=>{ setActiveId(id); setView(VIEWS.DETAIL); window.history.pushState({ view: VIEWS.DETAIL, id }, "", `#live-${id}`); }}
               onGoLive={handleGoLive}
               onAddSchedule={()=>setView(VIEWS.MY)}
