@@ -91,18 +91,30 @@ function expandOccurrences(schedule) {
   const days = schedule.daysOfWeek ?? (schedule.dayOfWeek != null ? [schedule.dayOfWeek] : []);
   const now  = new Date();
   const list = [];
+  const [sh, sm] = schedule.startTime.split(":").map(Number);
+  const [eh, em] = schedule.endTime.split(":").map(Number);
+  const startMins = sh * 60 + sm;
+  // Handle overnight lives (e.g. 11pm-1am): end is next day
+  const overnight = (eh * 60 + em) < startMins;
+  const endMins   = overnight ? (eh * 60 + em) + 1440 : (eh * 60 + em);
+
   for (let w = 0; w < WEEKS_OUT; w++) {
     for (const dow of days) {
       const base = new Date(now);
       base.setDate(now.getDate() + (dow - now.getDay() + 7) % 7 + w * 7);
       base.setHours(0, 0, 0, 0);
       const dateStr  = base.toISOString().slice(0, 10);
-      const [sh, sm] = schedule.startTime.split(":").map(Number);
-      const [eh, em] = schedule.endTime.split(":").map(Number);
       const nowMins  = now.getHours() * 60 + now.getMinutes();
       const isToday  = base.toDateString() === now.toDateString();
-      const isLive   = isToday && nowMins >= sh * 60 + sm && nowMins < eh * 60 + em;
-      const isPast   = isToday && nowMins >= eh * 60 + em;
+
+      // For overnight lives, also check if we are currently in the window
+      // that started yesterday (previous day's live still going)
+      const isLive   = isToday && nowMins >= startMins && nowMins < endMins;
+
+      // isPast: for overnight, not past until endMins (which may exceed 1440 conceptually)
+      // Simple check: today and current time is past the end
+      const isPast   = isToday && !isLive && nowMins >= (overnight ? endMins - 1440 : endMins) && nowMins >= startMins;
+
       if (isPast && !isLive) continue;
       const daysAway = Math.round((base - now) / 86400000);
       if (w === 0 && daysAway > LOOK_AHEAD_DAYS && !isLive) continue;
@@ -1506,7 +1518,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
     if (filter === "Live Now")  filtered = filtered.filter(o => o.status === STATUS.LIVE_NOW);
     if (filter === "Today")     filtered = filtered.filter(o => o.dateObj.toDateString() === todayStr);
     if (filter === "Tomorrow")  filtered = filtered.filter(o => o.dateObj.toDateString() === tomorrowStr);
-    if (filter === "Coming Up") filtered = filtered.filter(o => o.daysAway >= 2 && o.daysAway <= 4);
+    if (filter === "Coming Up") filtered = filtered.filter(o => o.daysAway >= 0 && o.daysAway <= 4 && o.status !== STATUS.LIVE_NOW);
     if (search.trim()) {
       const q = search.trim().replace(/^@/,"").toLowerCase();
       filtered = filtered.filter(o => o.schedule.hostUsername.toLowerCase().includes(q));
@@ -1535,7 +1547,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
   const todayCount    = allOccurrences.filter(o => o.dateObj.toDateString() === new Date().toDateString()).length;
   const tomorrowDate  = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
   const tomorrowCount = allOccurrences.filter(o => o.dateObj.toDateString() === tomorrowDate.toDateString()).length;
-  const comingUpCount = allOccurrences.filter(o => o.daysAway >= 2 && o.daysAway <= 4).length;
+  const comingUpCount = allOccurrences.filter(o => o.daysAway >= 0 && o.daysAway <= 4 && o.status !== STATUS.LIVE_NOW).length;
 
   const filterTabs = [
     { key:"All",       label:"All",        count: communitySchedules.length },
@@ -2052,6 +2064,38 @@ function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
   );
 }
 
+// ─── Share Schedule Modal ─────────────────────────────────────────────────────
+// Shown after joining a new community if the user already has a schedule elsewhere
+
+function ShareScheduleModal({ community, existingSchedule, onConfirm, onSkip }) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
+      <div style={{width:"100%",maxWidth:"400px",background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"24px",border:"1px solid rgba(255,255,255,0.1)"}}>
+        <p style={{fontSize:"32px",textAlign:"center",marginBottom:"12px"}}>📅</p>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"18px",textAlign:"center",margin:"0 0 8px"}}>
+          Add your schedule to {community.name}?
+        </h3>
+        <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",textAlign:"center",margin:"0 0 6px",lineHeight:1.5}}>
+          You already go live on <strong style={{color:"#fbbf24"}}>{existingSchedule.platform}</strong> — want members of <strong style={{color:"#fbbf24"}}>{community.name}</strong> to see your schedule too?
+        </p>
+        <p style={{color:"rgba(255,255,255,0.35)",fontSize:"11px",textAlign:"center",margin:"0 0 20px"}}>
+          Your same days & times will be shared.
+        </p>
+        <div style={{display:"flex",gap:"10px"}}>
+          <button onClick={onSkip}
+            style={{flex:1,background:"rgba(255,255,255,0.1)",color:"#fff",fontWeight:700,fontSize:"14px",border:"none",borderRadius:"12px",padding:"12px",cursor:"pointer"}}>
+            Not Now
+          </button>
+          <button onClick={onConfirm}
+            style={{flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"14px",border:"none",borderRadius:"12px",padding:"12px",cursor:"pointer"}}>
+            Yes, Share It! 🎯
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── App Root ──────────────────────────────────────────────────────────────────
 
 const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help" };
@@ -2068,6 +2112,7 @@ export default function App() {
   const [activeId,    setActiveId]    = useState(null);
   const [activeCommunityId, setActiveCommunityId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [shareScheduleFor, setShareScheduleFor] = useState(null); // community to share schedule into
 
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(()=>setTick(n=>n+1), 30000); return ()=>clearInterval(t); }, []);
@@ -2507,6 +2552,11 @@ async function handleLogout() {
     setUsers(p=>p.map(u=>u.id===currentUser.id?updated:u));
     setCurrentUser(updated);
     setActiveCommunityId(community.id);
+
+    // If user has an existing schedule, ask if they want to add it to this community too
+    const hasSchedule = schedules.some(s => s.userId === currentUser.id);
+    if (hasSchedule) setShareScheduleFor(community);
+
     return true;
   }
 
@@ -2734,6 +2784,29 @@ if (!currentUser && !pendingUser) return (
   return (
     <>
       <GlobalStyles />
+      {shareScheduleFor && (
+        (() => {
+          const existingSchedule = schedules.find(s => s.userId === currentUser.id);
+          return existingSchedule ? (
+            <ShareScheduleModal
+              community={shareScheduleFor}
+              existingSchedule={existingSchedule}
+              onSkip={() => setShareScheduleFor(null)}
+              onConfirm={async () => {
+                // Copy the schedule to the new community
+                const newSched = {
+                  ...existingSchedule,
+                  id: uid(),
+                  communityId: shareScheduleFor.id,
+                  createdAt: new Date().toISOString(),
+                };
+                await handleSaveSchedule(newSched);
+                setShareScheduleFor(null);
+              }}
+            />
+          ) : null;
+        })()
+      )}
       <div className="app-shell text-white" style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",overflowX:"hidden"}}>
         <header style={{position:"sticky",top:0,zIndex:40,background:"rgba(10,12,24,0.95)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
           <div style={{padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
