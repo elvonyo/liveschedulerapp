@@ -1572,28 +1572,131 @@ function HostCard({ schedule, occurrences, signups, onView, isOwner, onGoLive })
   );
 }
 
-// ─── MemberCount ──────────────────────────────────────────────────────────────
-function MemberCount({ communityId }) {
-  const [count, setCount] = useState(null);
+// ─── MemberCount + Members Panel ──────────────────────────────────────────────
+function MemberCount({ communityId, currentUserId, canManage, onRoleChange, onRemove }) {
+  const [members, setMembers]   = useState([]);
+  const [open,    setOpen]      = useState(false);
+  const [loading, setLoading]   = useState(false);
 
   useEffect(() => {
     if (!communityId) return;
-    supabase
-      .from("community_members")
-      .select("user_id", { count: "exact", head: true })
-      .eq("community_id", communityId)
-      .then(({ count: c }) => setCount(c));
+    loadMembers();
   }, [communityId]);
 
-  if (count === null) return null;
+  async function loadMembers() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("community_members")
+      .select("user_id, role, profiles(username)")
+      .eq("community_id", communityId);
+    setMembers(data || []);
+    setLoading(false);
+  }
+
+  async function handleRoleChange(userId, newRole) {
+    const { error } = await supabase
+      .from("community_members")
+      .update({ role: newRole })
+      .eq("community_id", communityId)
+      .eq("user_id", userId);
+    if (error) { alert(error.message); return; }
+    setMembers(prev => prev.map(m => m.user_id === userId ? { ...m, role: newRole } : m));
+    if (onRoleChange) onRoleChange(userId, newRole);
+  }
+
+  async function handleRemove(userId) {
+    const { error } = await supabase
+      .from("community_members")
+      .delete()
+      .eq("community_id", communityId)
+      .eq("user_id", userId);
+    if (error) { alert(error.message); return; }
+    setMembers(prev => prev.filter(m => m.user_id !== userId));
+    if (onRemove) onRemove(userId);
+  }
+
+  const count = members.length;
+
   return (
-    <span style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",fontWeight:600}}>
-      {count} member{count !== 1 ? "s" : ""}
-    </span>
+    <>
+      <button onClick={() => setOpen(v => !v)}
+        style={{background:"none",border:"none",cursor:"pointer",padding:0,color:"rgba(255,255,255,0.4)",fontSize:"13px",fontWeight:600,textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:"3px"}}>
+        {loading ? "…" : `${count} member${count !== 1 ? "s" : ""}`}
+      </button>
+
+      {open && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0"}}
+          onClick={() => setOpen(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{width:"100%",maxWidth:"500px",background:"linear-gradient(180deg,#1a1f35,#141728)",borderRadius:"20px 20px 0 0",padding:"20px",maxHeight:"80vh",overflowY:"auto"}}>
+
+            {/* Handle bar */}
+            <div style={{width:40,height:4,background:"rgba(255,255,255,0.2)",borderRadius:2,margin:"0 auto 16px"}} />
+
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
+              <h3 style={{color:"#fff",fontWeight:900,fontSize:"17px",margin:0}}>Members ({count})</h3>
+              <button onClick={() => setOpen(false)} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:"18px",cursor:"pointer"}}>✕</button>
+            </div>
+
+            {members.map(m => {
+              const username   = m.profiles?.username || "Unknown";
+              const role       = m.role || "member";
+              const isLeader   = role === "leader";
+              const isMod      = role === "mod";
+              const isSelf     = m.user_id === currentUserId;
+              const initial    = username[0]?.toUpperCase() || "?";
+
+              return (
+                <div key={m.user_id} style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 0",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+                  {/* Avatar */}
+                  <div style={{width:36,height:36,borderRadius:"50%",background:isLeader?"linear-gradient(135deg,#fbbf24,#f59e0b)":isMod?"linear-gradient(135deg,#6366f1,#8b5cf6)":"linear-gradient(135deg,#374151,#1f2937)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"13px",flexShrink:0}}>
+                    {initial}
+                  </div>
+
+                  {/* Name + role */}
+                  <div style={{flex:1,minWidth:0}}>
+                    <p style={{color:"#fff",fontWeight:700,fontSize:"13px",margin:0}}>@{username}</p>
+                    <p style={{fontSize:"10px",fontWeight:700,margin:"2px 0 0",
+                      color:isLeader?"#fbbf24":isMod?"#a78bfa":"rgba(255,255,255,0.35)"}}>
+                      {isLeader?"👑 Leader":isMod?"🛡️ Mod":"Member"}
+                    </p>
+                  </div>
+
+                  {/* Actions — only canManage users see these, can't modify leader or self */}
+                  {canManage && !isLeader && !isSelf && (
+                    <div style={{display:"flex",gap:"5px",flexShrink:0}}>
+                      {isMod ? (
+                        <button onClick={() => handleRoleChange(m.user_id, "member")}
+                          style={{background:"rgba(167,139,250,0.15)",color:"#a78bfa",fontSize:"10px",fontWeight:700,border:"none",borderRadius:"8px",padding:"5px 8px",cursor:"pointer"}}>
+                          Remove Mod
+                        </button>
+                      ) : (
+                        <button onClick={() => handleRoleChange(m.user_id, "mod")}
+                          style={{background:"rgba(99,102,241,0.15)",color:"#818cf8",fontSize:"10px",fontWeight:700,border:"none",borderRadius:"8px",padding:"5px 8px",cursor:"pointer"}}>
+                          Make Mod 🛡️
+                        </button>
+                      )}
+                      <button onClick={() => handleRemove(m.user_id)}
+                        style={{background:"rgba(239,68,68,0.12)",color:"#f87171",fontSize:"10px",fontWeight:700,border:"none",borderRadius:"8px",padding:"5px 8px",cursor:"pointer"}}>
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {members.length === 0 && !loading && (
+              <p style={{color:"rgba(255,255,255,0.4)",textAlign:"center",padding:"20px 0",margin:0}}>No members yet.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
-function DashboardView({ schedules, signups, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, onLeaveCommunity, onDeleteCommunity, activeCommunityId, onSwitchCommunity }) {
+function DashboardView({ schedules, signups, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, onLeaveCommunity, onDeleteCommunity, activeCommunityId, onSwitchCommunity, isLeaderOrMod }) {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
@@ -1660,7 +1763,11 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
         <>
           <div style={{display:"flex",alignItems:"baseline",gap:"10px",flexWrap:"wrap"}}>
             <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>{activeCommunity?.name} Lives</h1>
-            <MemberCount communityId={activeCommunityId} />
+            <MemberCount
+              communityId={activeCommunityId}
+              currentUserId={currentUser.id}
+              canManage={isLeaderOrMod}
+            />
           </div>
 
           {/* Search */}
@@ -2314,8 +2421,30 @@ export default function App() {
   // Is the current user a leader of the active community?
   const activeCommunity     = communities.find(c=>c.id===activeCommunityId);
   const isGroupLeader       = activeCommunity?.leaderId === currentUser?.id;
-  // Is the current user a leader of ANY community?
   const myLeaderCommunities = communities.filter(c=>c.leaderId===currentUser?.id);
+
+  // Check if user is leader OR mod for the active community
+  // [DB INTEGRATION] This reads from community_members.role in Supabase
+  const [activeMemberRole, setActiveMemberRole] = useState("member");
+  useEffect(() => {
+    if (!activeCommunityId || !currentUser) return;
+    supabase
+      .from("community_members")
+      .select("role")
+      .eq("community_id", activeCommunityId)
+      .eq("user_id", currentUser.id)
+      .maybeSingle()
+      .then(({ data }) => setActiveMemberRole(data?.role || "member"));
+  }, [activeCommunityId, currentUser?.id]);
+
+  const isLeaderOrMod = activeMemberRole === "leader" || activeMemberRole === "mod";
+
+  // Show Admin tab for leaders AND mods of any community
+  const myAdminCommunities = communities.filter(c => {
+    if (c.leaderId === currentUser?.id) return true;
+    // Mods get admin access too — checked via activeMemberRole for active community
+    return false; // expanded below via Supabase role check
+  });
 
 useEffect(() => {
 
@@ -3041,7 +3170,7 @@ if (!currentUser && !pendingUser) return (
   const navItems = [
     { key:VIEWS.DASHBOARD, icon:"🏠", label:"Lives" },
     { key:VIEWS.MY,        icon:"📅", label:"My Schedule" },
-    ...(myLeaderCommunities.length>0 ? [{ key:VIEWS.ADMIN, icon:"👑", label:"Admin" }] : []),
+    ...(myLeaderCommunities.length>0 || isLeaderOrMod ? [{ key:VIEWS.ADMIN, icon:"👑", label:"Admin" }] : []),
   ];
 
   return (
@@ -3094,6 +3223,7 @@ if (!currentUser && !pendingUser) return (
               communities={communities}
               tick={tick}
               activeCommunityId={activeCommunityId}
+              isLeaderOrMod={isLeaderOrMod}
               onSwitchCommunity={id=>{ setActiveCommunityId(id); setView(VIEWS.DASHBOARD); }}
               onJoinCommunity={handleJoinCommunity}
               onCreateCommunity={handleCreateFromDashboard}
@@ -3133,9 +3263,9 @@ if (!currentUser && !pendingUser) return (
             <HelpView onClose={() => setView(VIEWS.DASHBOARD)} />
           )}
 
-          {view===VIEWS.ADMIN&&myLeaderCommunities.length>0&&(
+          {view===VIEWS.ADMIN&&(myLeaderCommunities.length>0||isLeaderOrMod)&&(
             <div style={{display:"flex",flexDirection:"column",gap:"24px"}}>
-              {myLeaderCommunities.map(community => (
+              {[...myLeaderCommunities, ...(isLeaderOrMod && activeCommunity && !myLeaderCommunities.find(c=>c.id===activeCommunity.id) ? [activeCommunity] : [])].map(community => (
                 <GroupAdminPanel
                   key={community.id}
                   community={community}
