@@ -2111,11 +2111,13 @@ useEffect(() => {
     if (active) setAuthLoading(false);
   }, 8000);
 
+  let isLoadingUser = false;
+
   const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log("[AUTH]", event, "user:", session?.user?.id ?? "none");
     if (!active) return;
 
     if (event === "SIGNED_OUT") {
+      isLoadingUser = false;
       setCurrentUser(null);
       setPendingUser(null);
       setActiveCommunityId(null);
@@ -2125,20 +2127,21 @@ useEffect(() => {
     }
 
     if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") && session?.user) {
+      // Prevent double-firing — only one load at a time
+      if (isLoadingUser) return;
+      isLoadingUser = true;
       try {
-        const user = await loadUserFromSupabase(session.user);
-        console.log("[AUTH] loadUserFromSupabase result:", user?.id, "hasPaid:", user?.hasPaid);
+        await loadUserFromSupabase(session.user);
       } catch(e) {
         console.error("auth state error:", e);
       } finally {
+        isLoadingUser = false;
         if (active) setAuthLoading(false);
       }
       return;
     }
 
-    // No session — not logged in
     if (event === "INITIAL_SESSION" && !session) {
-      console.log("[AUTH] No session found — showing login");
       setAuthLoading(false);
     }
   });
