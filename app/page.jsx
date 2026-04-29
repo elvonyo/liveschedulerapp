@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 /**
@@ -1914,7 +1914,6 @@ export default function App() {
   const [activeId,    setActiveId]    = useState(null);
   const [activeCommunityId, setActiveCommunityId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const sessionRestoredRef = useRef(false);
 
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(()=>setTick(n=>n+1), 30000); return ()=>clearInterval(t); }, []);
@@ -2092,25 +2091,15 @@ async function loadUserFromSupabase(authUser) {
 useEffect(() => {
   let active = true;
 
-  async function restoreSession() {
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (active && data.session?.user) {
-        sessionRestoredRef.current = true;
-        await loadUserFromSupabase(data.session.user);
-      }
-    } catch (e) {
-      console.error("restoreSession error:", e);
-    } finally {
-      if (active) setAuthLoading(false);
-    }
-  }
-
-  restoreSession();
+  // Safety net — never stay stuck on "Loading account…" more than 8 seconds
+  const timeout = setTimeout(() => {
+    if (active) setAuthLoading(false);
+  }, 8000);
 
   const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (!active) return;
+
     if (event === "SIGNED_OUT") {
-      sessionRestoredRef.current = false;
       setCurrentUser(null);
       setPendingUser(null);
       setActiveCommunityId(null);
@@ -2119,20 +2108,26 @@ useEffect(() => {
       return;
     }
 
-    if (session?.user && event !== "SIGNED_OUT") {
-      // Skip if restoreSession already loaded this session on mount
-      if (event === "INITIAL_SESSION" && sessionRestoredRef.current) return;
+    if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") && session?.user) {
       try {
         await loadUserFromSupabase(session.user);
       } catch(e) {
-        console.error("onAuthStateChange error:", e);
-        setAuthLoading(false);
+        console.error("auth state error:", e);
+      } finally {
+        if (active) setAuthLoading(false);
       }
+      return;
+    }
+
+    // No session — not logged in
+    if (event === "INITIAL_SESSION" && !session) {
+      setAuthLoading(false);
     }
   });
 
   return () => {
     active = false;
+    clearTimeout(timeout);
     listener?.subscription?.unsubscribe();
   };
 }, []);
