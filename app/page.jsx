@@ -1731,7 +1731,16 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
       const q = search.trim().replace(/^@/,"").toLowerCase();
       list = list.filter(o => o.schedule.hostUsername.toLowerCase().includes(q));
     }
-    return list;
+
+    // Deduplicate: if same host (userId) has same time slot across multiple communities,
+    // only show once (the one from the active community, or the first found)
+    const seen = new Map(); // key: userId+date+startTime
+    return list.filter(o => {
+      const key = `${o.schedule.userId}__${o.date}__${o.schedule.startTime}`;
+      if (seen.has(key)) return false;
+      seen.set(key, true);
+      return true;
+    });
   }, [allOccurrences, filter, search]);
 
   const liveNowCount  = communitySchedules.filter(s => effectiveStatus(s) === STATUS.LIVE_NOW).length;
@@ -2293,9 +2302,75 @@ function ShareScheduleModal({ community, existingSchedule, onConfirm, onSkip }) 
   );
 }
 
+// ─── All Live View ────────────────────────────────────────────────────────────
+// Shows all unique live sessions across every community the user belongs to
+
+function AllLiveView({ schedules, signups, communities, currentUser, onView, onGoLive, onBack }) {
+  const liveOccurrences = useMemo(() => {
+    // Get all live occurrences across all communities user belongs to
+    const communitySchedules = schedules.filter(s =>
+      currentUser.communityIds?.includes(s.communityId)
+    );
+    const allOcc = communitySchedules.flatMap(s => expandOccurrences(s))
+      .filter(o => o.status === STATUS.LIVE_NOW);
+
+    // Deduplicate by userId + startTime — same host live in multiple communities = 1 card
+    const seen = new Map();
+    return allOcc.filter(o => {
+      const key = `${o.schedule.userId}__${o.schedule.startTime}`;
+      if (seen.has(key)) return false;
+      seen.set(key, true);
+      return true;
+    });
+  }, [schedules, currentUser.communityIds]);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontWeight:700,cursor:"pointer",padding:0}}>← Back</button>
+        <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0,display:"flex",alignItems:"center",gap:"8px"}}>
+          🔴 Live Now
+          <span style={{background:"#ef4444",color:"#fff",fontSize:"11px",fontWeight:900,padding:"2px 8px",borderRadius:"20px"}}>{liveOccurrences.length}</span>
+        </h1>
+      </div>
+      <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",margin:0}}>All live sessions across your communities</p>
+
+      {liveOccurrences.length === 0 ? (
+        <div style={{textAlign:"center",padding:"60px 0"}}>
+          <p style={{fontSize:"40px",marginBottom:"12px"}}>📡</p>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"15px",fontWeight:600}}>No one is live right now.</p>
+        </div>
+      ) : (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))",gap:"12px"}}>
+          {liveOccurrences.map(occ => {
+            // Find which community this belongs to
+            const community = communities.find(c => c.id === occ.schedule.communityId);
+            return (
+              <div key={occ.occurrenceId} style={{position:"relative"}}>
+                {community && (
+                  <span style={{position:"absolute",top:-8,left:8,background:"rgba(30,35,64,0.95)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)",fontSize:"9px",fontWeight:700,padding:"2px 7px",borderRadius:"20px",zIndex:1}}>
+                    {community.name}
+                  </span>
+                )}
+                <OccurrenceCard
+                  occurrence={occ}
+                  signups={signups}
+                  onView={onView}
+                  isOwner={occ.schedule.userId === currentUser.id}
+                  onGoLive={onGoLive}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── App Root ──────────────────────────────────────────────────────────────────
 
-const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help" };
+const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help", ALL_LIVE:"all_live" };
 
 export default function App() {
   // [DB INTEGRATION] Replace all useState with useEffect + API/Supabase fetches on mount.
@@ -3165,7 +3240,12 @@ if (!currentUser && !pendingUser) return (
   );
 
   const myGroups    = communities.filter(c=>currentUser.communityIds?.includes(c.id));
-  const liveNow     = schedules.filter(s=>currentUser.communityIds?.includes(s.communityId)&&effectiveStatus(s)===STATUS.LIVE_NOW).length;
+  // Deduplicate across communities by userId — same host counts as 1 live
+  const liveNowSchedules = schedules.filter(s =>
+    currentUser.communityIds?.includes(s.communityId) && effectiveStatus(s) === STATUS.LIVE_NOW
+  );
+  const uniqueLiveUserIds = new Set(liveNowSchedules.map(s => s.userId));
+  const liveNow = uniqueLiveUserIds.size;
 
   const navItems = [
     { key:VIEWS.DASHBOARD, icon:"🏠", label:"Lives" },
@@ -3205,7 +3285,12 @@ if (!currentUser && !pendingUser) return (
             <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
               <span style={{fontSize:"18px"}}>📡</span>
               <span style={{fontWeight:900,color:"#fff",fontSize:"14px",letterSpacing:"-0.3px"}}>LiveSupport <span style={{color:"#fbbf24"}}>Scheduler</span></span>
-              {liveNow>0&&<span style={{background:"#ef4444",color:"#fff",fontSize:"10px",fontWeight:900,padding:"2px 7px",borderRadius:"20px",animation:"livePulse 1.2s ease-in-out infinite"}}>{liveNow} LIVE</span>}
+              {liveNow>0&&(
+                <button onClick={()=>setView(VIEWS.ALL_LIVE)}
+                  style={{background:"#ef4444",color:"#fff",fontSize:"10px",fontWeight:900,padding:"2px 7px",borderRadius:"20px",animation:"livePulse 1.2s ease-in-out infinite",border:"none",cursor:"pointer"}}>
+                  {liveNow} LIVE
+                </button>
+              )}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
               <NotificationBell currentUser={currentUser} activeCommunityId={activeCommunityId} />
@@ -3256,6 +3341,18 @@ if (!currentUser && !pendingUser) return (
               onSave={handleSaveSchedule}
               onGoLive={handleGoLive}
               onStatusChange={handleStatusChange}
+            />
+          )}
+
+          {view===VIEWS.ALL_LIVE&&(
+            <AllLiveView
+              schedules={schedules}
+              signups={signups}
+              communities={communities}
+              currentUser={currentUser}
+              onView={id=>{ setActiveId(id); setView(VIEWS.DETAIL); window.history.pushState({ view: VIEWS.DETAIL, id }, "", `#live-${id}`); }}
+              onGoLive={handleGoLive}
+              onBack={() => setView(VIEWS.DASHBOARD)}
             />
           )}
 
