@@ -1977,6 +1977,16 @@ function PaywallScreen({ currentUser, onPaymentSuccess, onLogout }) {
  *     created_at timestamptz default now()
  *   );
  */
+// Helper to convert VAPID public key for push subscription
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64   = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData  = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
 function NotificationBell({ currentUser, activeCommunityId }) {
   const [status,   setStatus]   = useState("idle"); // idle | requesting | granted | denied | unsupported
   const [loading,  setLoading]  = useState(false);
@@ -1996,17 +2006,25 @@ function NotificationBell({ currentUser, activeCommunityId }) {
     try {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
-        // [DB INTEGRATION] Register service worker + get push subscription, then POST to /api/push/subscribe
-        // const reg = await navigator.serviceWorker.ready;
-        // const sub = await reg.pushManager.subscribe({
-        //   userVisibleOnly: true,
-        //   applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        // });
-        // await fetch("/api/push/subscribe", {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify({ subscription: sub, userId: currentUser.id, communityId: activeCommunityId }),
-        // });
+        try {
+          // Register service worker and subscribe to push
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""),
+          });
+          await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subscription: sub.toJSON(),
+              userId: currentUser.id,
+              communityId: activeCommunityId,
+            }),
+          });
+        } catch(e) {
+          console.warn("Push subscription failed:", e);
+        }
         setStatus("granted");
       } else {
         setStatus("denied");
@@ -2017,7 +2035,31 @@ function NotificationBell({ currentUser, activeCommunityId }) {
     setLoading(false);
   }
 
-  if (status === "unsupported") return null;
+  // On iOS Safari, Notification API isn't available unless added to Home Screen
+  const isIOS = typeof window !== "undefined" &&
+    /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+    !window.navigator.standalone;
+
+  if (status === "unsupported") {
+    if (!isIOS) return null;
+    // Show a bell that explains Home Screen requirement on iOS
+    return (
+      <div style={{position:"relative"}}>
+        <button onClick={() => setShowInfo(v => !v)}
+          style={{display:"flex",alignItems:"center",justifyContent:"center",width:"32px",height:"32px",borderRadius:"50%",fontSize:"15px",border:"none",cursor:"pointer",background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",flexShrink:0}}>
+          🔔
+        </button>
+        {showInfo && (
+          <div style={{position:"absolute",right:0,top:"100%",marginTop:"6px",width:"220px",background:"#1e2340",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"16px",padding:"14px",zIndex:100,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+            <p style={{color:"#fbbf24",fontWeight:700,fontSize:"12px",margin:"0 0 6px"}}>Enable Notifications on iPhone</p>
+            <p style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",margin:0,lineHeight:1.5}}>
+              Tap the <strong style={{color:"#fff"}}>Share</strong> button in Safari, then <strong style={{color:"#fff"}}>Add to Home Screen</strong>. Open the app from your Home Screen to enable notifications.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const bellBg = status === "granted" ? "rgba(16,185,129,0.2)"
               : status === "denied"  ? "rgba(239,68,68,0.2)"
@@ -2401,6 +2443,15 @@ export default function App() {
   useEffect(() => {
     const t = setInterval(() => setTick(n => n + 1), 30000);
     return () => clearInterval(t);
+  }, []);
+
+  // Register service worker on app load
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("SW registered:", reg.scope))
+        .catch(e => console.warn("SW registration failed:", e));
+    }
   }, []);
 
   // Refresh all community data every 5 minutes
@@ -3162,18 +3213,23 @@ async function handleLogout() {
 
   async function handleGoLive(id) {
     await handleStatusChange(id, STATUS.LIVE_NOW);
-    // [DB INTEGRATION — PUSH] Trigger push notification to community members
-    // const sched = schedules.find(s => s.id === id);
-    // await fetch("/api/push/send", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     communityId: sched.communityId,
-    //     title: `@${sched.hostUsername} is LIVE now! 🔴`,
-    //     body: `on ${sched.platform} — go show your support!`,
-    //     url: `/live/${id}`,
-    //   }),
-    // });
+
+    // Send push notification to all community subscribers
+    const sched = schedules.find(s => s.id === id);
+    if (sched) {
+      fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          communityId: sched.communityId,
+          title: `@${sched.hostUsername} is Live Now! 🔴`,
+          body: sched.notes
+            ? `${sched.platform} · ${sched.notes}`
+            : `${sched.platform} · ${formatTime(sched.startTime)} – ${formatTime(sched.endTime)}`,
+          url: "/",
+        }),
+      }).catch(e => console.warn("Push send failed:", e));
+    }
   }
 
   async function handleStatusChange(id, st) {
