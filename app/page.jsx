@@ -2030,8 +2030,8 @@ function NotificationBell({ currentUser, activeCommunityId }) {
     <div style={{position:"relative"}}>
       <button onClick={() => status === "idle" ? requestPermission() : setShowInfo(v=>!v)}
         disabled={loading}
-        style={{display:"flex",alignItems:"center",gap:"5px",padding:"5px 10px",borderRadius:"20px",fontSize:"11px",fontWeight:700,border:"none",cursor:"pointer",background:bellBg,color:bellColor,flexShrink:0}}>
-        {loading ? "…" : status === "granted" ? "🔔 On" : status === "denied" ? "🔕 Off" : "🔔"}
+        style={{display:"flex",alignItems:"center",justifyContent:"center",width:"32px",height:"32px",borderRadius:"50%",fontSize:"15px",border:"none",cursor:"pointer",background:bellBg,color:bellColor,flexShrink:0}}>
+        {loading ? "…" : status === "granted" ? "🔔" : status === "denied" ? "🔕" : "🔔"}
       </button>
 
       {showInfo && (
