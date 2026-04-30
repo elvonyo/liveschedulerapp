@@ -3143,53 +3143,39 @@ async function handleLogout() {
   // ── Schedules ──
   async function handleSaveSchedule(s) {
     const payload = {
-      user_id: s.userId,
-      community_id: s.communityId,
+      user_id:       s.userId,
+      community_id:  s.communityId,
       host_username: s.hostUsername,
-      platform: s.platform,
-      days_of_week: s.daysOfWeek || [],
-      start_time: s.startTime,
-      end_time: s.endTime,
-      notes: s.notes || "",
+      platform:      s.platform,
+      days_of_week:  s.daysOfWeek || [],
+      start_time:    s.startTime,
+      end_time:      s.endTime,
+      notes:         s.notes || "",
       manual_status: s.manualStatus || null,
-      updated_at: new Date().toISOString(),
     };
-
-    const { data: existingSchedule } = await supabase
-      .from("schedules")
-      .select("id")
-      .eq("user_id", s.userId)
-      .eq("community_id", s.communityId)
-      .maybeSingle();
 
     let savedSchedule;
 
-    if (existingSchedule?.id) {
+    if (s.id) {
+      // Editing existing schedule — update by ID directly
       const { data, error } = await supabase
         .from("schedules")
         .update(payload)
-        .eq("id", existingSchedule.id)
-        .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+        .eq("id", s.id)
+        .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
         .single();
 
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
+      if (error) { alert("Save failed: " + error.message); return; }
       savedSchedule = data;
     } else {
+      // New schedule — insert
       const { data, error } = await supabase
         .from("schedules")
         .insert(payload)
-        .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+        .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
         .single();
 
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
+      if (error) { alert("Save failed: " + error.message); return; }
       savedSchedule = data;
     }
 
