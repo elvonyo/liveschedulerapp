@@ -15,7 +15,7 @@ import { supabase } from "../lib/supabaseClient";
  */
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const STATUS = {
   UPCOMING:  "Upcoming",
