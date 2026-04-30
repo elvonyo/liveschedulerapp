@@ -1413,7 +1413,7 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
       <div className="rounded-2xl p-4" style={{background:"linear-gradient(145deg,#1a1f3c,#0f1225)"}}>
         <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",margin:"0 0 10px"}}>{weekLabel}</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"6px"}}>
-          <Pill label="Members"  value={members.length} />
+
           <Pill label="Hosts"    value={commScheds.length} />
           <Pill label="Live Now" value={liveNowCount} />
           <Pill label="🎁 Total" value={totalGiftAll>0?`$${totalGiftAll}`:"—"} accent={totalGiftAll>0} />
@@ -1465,25 +1465,14 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
         })}
       </div>
 
-      {/* Members */}
-      <div>
-        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:"0 0 10px"}}>Members ({members.length})</h3>
-        <div className="rounded-2xl overflow-hidden" style={{background:"linear-gradient(145deg,#1e2340,#16192e)"}}>
-          {members.map((m, i) => (
-            <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderBottom:i<members.length-1?"1px solid rgba(255,255,255,0.08)":"none"}}>
-              <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f43f5e)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"12px",flexShrink:0}}>{m.username[0].toUpperCase()}</div>
-                <div>
-                  <p className="text-white font-semibold text-sm">@{m.username}</p>
-                  {m.id === community.leaderId && <p className="text-amber-400 text-xs font-bold">👑 Leader</p>}
-                </div>
-              </div>
-              {m.id !== community.leaderId && (
-                <button onClick={() => onRemoveMember(community.id, m.id)} className="text-red-400/60 hover:text-red-400 text-xs font-semibold transition-colors">Remove</button>
-              )}
-            </div>
-          ))}
-        </div>
+      {/* Members — clickable count opens same bottom sheet as dashboard */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Members</h3>
+        <MemberCount
+          communityId={community.id}
+          currentUserId={community.leaderId}
+          canManage={true}
+        />
       </div>
     </div>
   );
