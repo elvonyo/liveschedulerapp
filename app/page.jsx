@@ -1334,7 +1334,26 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
 // ─── Group Admin Panel ─────────────────────────────────────────────────────────
 
 function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChange, onGoLive, onRemoveMember }) {
-  const members   = allUsers.filter(u => u.communityIds?.includes(community.id));
+  const [members, setMembers] = useState([]);
+
+  // Fetch members directly from Supabase — don't rely on local allUsers state
+  useEffect(() => {
+    if (!community?.id) return;
+    supabase
+      .from("community_members")
+      .select("user_id, role, profiles(username)")
+      .eq("community_id", community.id)
+      .then(({ data }) => {
+        if (data) {
+          setMembers(data.map(m => ({
+            id: m.user_id,
+            username: m.profiles?.username || "Unknown",
+            role: m.role || "member",
+            communityIds: [community.id],
+          })));
+        }
+      });
+  }, [community?.id]);
   const [csvHostFilter, setCsvHostFilter] = useState("all");
   const [csvWeek, setCsvWeek] = useState(getWeekStart(new Date()).toISOString().slice(0, 10));
   const weekOptions = getWeekOptions(9);
