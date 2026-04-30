@@ -2019,24 +2019,25 @@ function NotificationBell({ currentUser, activeCommunityId }) {
 
   if (status === "unsupported") return null;
 
+  const bellBg = status === "granted" ? "rgba(16,185,129,0.2)"
+              : status === "denied"  ? "rgba(239,68,68,0.2)"
+              : "rgba(255,255,255,0.1)";
+  const bellColor = status === "granted" ? "#34d399"
+                  : status === "denied"  ? "#f87171"
+                  : "rgba(255,255,255,0.6)";
+
   return (
-    <div className="relative">
+    <div style={{position:"relative"}}>
       <button onClick={() => status === "idle" ? requestPermission() : setShowInfo(v=>!v)}
         disabled={loading}
-        title={status === "granted" ? "Notifications on" : status === "denied" ? "Notifications blocked" : "Enable notifications"}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
-          status === "granted" ? "bg-emerald-500/20 text-emerald-400" :
-          status === "denied"  ? "bg-red-500/20 text-red-400" :
-          "bg-white/10 hover:bg-white/20 text-white/60"
-        }`}>
+        style={{display:"flex",alignItems:"center",gap:"5px",padding:"5px 10px",borderRadius:"20px",fontSize:"11px",fontWeight:700,border:"none",cursor:"pointer",background:bellBg,color:bellColor,flexShrink:0}}>
         {loading ? "…" : status === "granted" ? "🔔 On" : status === "denied" ? "🔕 Off" : "🔔"}
       </button>
 
-      {/* Info popover */}
       {showInfo && (
-        <div style={{position:"absolute",right:0,top:"100%",marginTop:"6px",width:"200px",background:"#1e2340",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"16px",overflow:"hidden",zIndex:100,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
-          {status === "granted" && <p className="text-white/70 text-xs">You'll get notified when hosts in your community go live. To turn off, check your browser notification settings.</p>}
-          {status === "denied"  && <p className="text-white/70 text-xs">Notifications are blocked. Go to your browser settings → Site Settings → Notifications to allow them for this site.</p>}
+        <div style={{position:"absolute",right:0,top:"100%",marginTop:"6px",width:"200px",background:"#1e2340",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"16px",padding:"12px",zIndex:100,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+          {status === "granted" && <p style={{color:"rgba(255,255,255,0.7)",fontSize:"12px",margin:0}}>You'll get notified when hosts go live. To turn off, check your browser notification settings.</p>}
+          {status === "denied"  && <p style={{color:"rgba(255,255,255,0.7)",fontSize:"12px",margin:0}}>Notifications blocked. Go to browser Settings → Notifications to allow this site.</p>}
         </div>
       )}
     </div>
