@@ -2560,34 +2560,36 @@ async function loadUserFromSupabase(authUser) {
   if (!profile) {
 
     const fallbackUsername =
-
       authUser.user_metadata?.username ||
-
       authUser.email?.split("@")[0] ||
-
       "user";
 
     const { data: createdProfile, error: createProfileError } = await supabase
-
       .from("profiles")
-
       .insert({ id: authUser.id, username: fallbackUsername })
-
       .select("id, username, has_paid, paid_at")
-
       .single();
 
     if (createProfileError) {
-
       console.error("Profile create error:", createProfileError);
       setAuthLoading(false);
       return null;
-
     }
 
     profile = createdProfile;
-
   }
+
+  // ── Show the user immediately after profile loads ──
+  // Don't block on community/schedule fetches — they load in background
+  const earlyUser = {
+    id: profile.id,
+    username: profile.username,
+    communityIds: [],
+    hasPaid: profile.has_paid ?? false,
+    paidAt: profile.paid_at ?? null,
+  };
+  setCurrentUser(earlyUser);
+  setAuthLoading(false);
 
   const { data: memberships, error: membershipError } = await supabase
     .from("community_members")
@@ -2657,10 +2659,9 @@ async function loadUserFromSupabase(authUser) {
     paidAt: profile.paid_at ?? null,
   };
 
-  // Set user and clear loading immediately — don't wait for communities/schedules
+  // Set user and clear loading RIGHT AWAY — don't wait for anything else
   setCurrentUser(appUser);
   setAuthLoading(false);
-
   setUsers(p =>
     p.find(u => u.id === appUser.id)
       ? p.map(u => u.id === appUser.id ? appUser : u)
