@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 /**
@@ -1433,13 +1433,13 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"8px",marginBottom:"8px"}}>
                 <div>
                   <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px",flexWrap:"wrap"}}><Badge status={status} /><span style={{color:"rgba(255,255,255,0.4)",fontSize:"11px"}}>{platformIcon(sched.platform)} {sched.platform}</span></div>
-                  <p className="text-white font-black text-sm">@{sched.hostUsername}</p>
-                  <p className="text-white/40 text-xs">{formatDays(sched.daysOfWeek??[sched.dayOfWeek])} · {formatTime(sched.startTime)} – {formatTime(sched.endTime)}</p>
+                  <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:0}}>@{sched.hostUsername}</p>
+                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",margin:"2px 0 0"}}>{formatDays(sched.daysOfWeek??[sched.dayOfWeek])} · {formatTime(sched.startTime)} – {formatTime(sched.endTime)}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-amber-400 font-black text-xl leading-none">{ss.length}</p>
-                  <p className="text-white/40 text-xs">supporters</p>
-                  {totalGift>0 && <p className="text-emerald-400 text-xs font-semibold">${totalGift} est.</p>}
+                  <p style={{color:"#fbbf24",fontWeight:900,fontSize:"20px",lineHeight:1,margin:0}}>{ss.length}</p>
+                  <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",margin:"2px 0 0"}}>supporters</p>
+                  {totalGift>0 && <p style={{color:"#34d399",fontSize:"11px",fontWeight:600,margin:"2px 0 0"}}>${totalGift} est.</p>}
                 </div>
               </div>
               <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"8px"}}>
@@ -1453,9 +1453,9 @@ function GroupAdminPanel({ community, allUsers, schedules, signups, onStatusChan
                   {ss.map(sg => (
                     <div key={sg.id} style={{display:"flex",alignItems:"center",gap:"8px",fontSize:"12px"}}>
                       <span style={{width:22,height:22,borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f43f5e)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"10px",flexShrink:0}}>{sg.displayName[0].toUpperCase()}</span>
-                      <span className="text-white font-semibold">{sg.displayName}</span>
-                      {sg.supporterUsername&&<span className="text-white/40">{sg.supporterUsername}</span>}
-                      {sg.plannedGiftAmount!=null&&<span className="text-amber-300 font-semibold ml-auto">${sg.plannedGiftAmount}</span>}
+                      <span style={{color:"#fff",fontWeight:600}}>{sg.displayName}</span>
+                      {sg.supporterUsername&&<span style={{color:"rgba(255,255,255,0.4)"}}>{sg.supporterUsername}</span>}
+                      {sg.plannedGiftAmount!=null&&<span style={{color:"#fcd34d",fontWeight:600,marginLeft:"auto"}}>${sg.plannedGiftAmount}</span>}
                     </div>
                   ))}
                 </div>
@@ -1996,9 +1996,48 @@ function NotificationBell({ currentUser, activeCommunityId }) {
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       setStatus("unsupported"); return;
     }
-    setStatus(Notification.permission === "granted" ? "granted" :
-              Notification.permission === "denied"  ? "denied"  : "idle");
-  }, []);
+    const perm = Notification.permission;
+    setStatus(perm === "granted" ? "granted" : perm === "denied" ? "denied" : "idle");
+
+    // If already granted, silently re-register subscription in case it was missed
+    // This handles users who granted permission before subscriptions were wired up
+    if (perm === "granted" && currentUser && activeCommunityId) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.pushManager.getSubscription().then(existing => {
+          if (existing) {
+            // Already subscribed — save to DB in case it wasn't saved before
+            fetch("/api/push/subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                subscription: existing.toJSON(),
+                userId: currentUser.id,
+                communityId: activeCommunityId,
+              }),
+            }).catch(() => {});
+          } else {
+            // No subscription exists — create one
+            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            if (!vapidKey) return;
+            reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(vapidKey),
+            }).then(sub => {
+              fetch("/api/push/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  subscription: sub.toJSON(),
+                  userId: currentUser.id,
+                  communityId: activeCommunityId,
+                }),
+              }).catch(() => {});
+            }).catch(() => {});
+          }
+        });
+      }).catch(() => {});
+    }
+  }, [currentUser?.id, activeCommunityId]);
 
   async function requestPermission() {
     if (!("Notification" in window)) return;
@@ -2454,12 +2493,18 @@ export default function App() {
     }
   }, []);
 
+  // Keep a ref to current communityIds so refresh always has latest value
+  const communityIdsRef = useRef([]);
+  useEffect(() => {
+    communityIdsRef.current = currentUser?.communityIds || [];
+  }, [currentUser?.communityIds]);
+
   // Refresh all community data every 30 seconds
   useEffect(() => {
     if (!currentUser) return;
 
     async function refresh() {
-      const ids = currentUser.communityIds || [];
+      const ids = communityIdsRef.current;
       if (ids.length === 0) return;
 
       for (const communityId of ids) {
@@ -2524,7 +2569,7 @@ export default function App() {
     refresh();
     const interval = setInterval(refresh, 30000);
     return () => clearInterval(interval);
-  }, [currentUser?.id, currentUser?.communityIds?.join(",")]);
+  }, [currentUser?.id]); // re-run when user changes — refresh function reads latest communityIds via closure
 
   // Handle browser back gesture (swipe left on iOS Safari)
   useEffect(() => {
