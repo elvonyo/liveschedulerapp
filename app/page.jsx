@@ -2454,18 +2454,19 @@ export default function App() {
     }
   }, []);
 
-  // Refresh all community data every 5 minutes
+  // Refresh all community data every 30 seconds
   useEffect(() => {
     if (!currentUser) return;
-    const interval = setInterval(async () => {
+
+    async function refresh() {
       const ids = currentUser.communityIds || [];
       if (ids.length === 0) return;
-      console.log("[REFRESH] Auto-refreshing community data...");
+
       for (const communityId of ids) {
         // Refresh schedules
         const { data: freshSchedules } = await supabase
           .from("schedules")
-          .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at, updated_at")
+          .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
           .eq("community_id", communityId);
 
         if (freshSchedules) {
@@ -2481,25 +2482,20 @@ export default function App() {
             notes:        s.notes || "",
             manualStatus: s.manual_status,
             createdAt:    s.created_at,
-            updatedAt:    s.updated_at,
           }));
           setSchedules(prev => {
-            // Merge: update existing, add new ones
             const updated = prev.filter(s => s.communityId !== communityId);
             return [...updated, ...mapped];
           });
         }
 
-        // Refresh signups for this community's schedules
-        const scheduleIds = schedules
-          .filter(s => s.communityId === communityId)
-          .map(s => s.id);
-
-        if (scheduleIds.length > 0) {
+        // Refresh signups — get all signups for schedules in this community
+        if (freshSchedules && freshSchedules.length > 0) {
+          const ids = freshSchedules.map(s => s.id);
           const { data: freshSignups } = await supabase
             .from("signups")
             .select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at")
-            .in("schedule_id", scheduleIds);
+            .in("schedule_id", ids);
 
           if (freshSignups) {
             const mapped = freshSignups.map(sg => ({
@@ -2512,19 +2508,23 @@ export default function App() {
               comment:           sg.comment || "",
               createdAt:         sg.created_at,
             }));
+            const scheduleIdSet = new Set(ids);
             setSignups(prev => {
-              const existingIds = new Set(mapped.map(s => s.id));
-              const kept = prev.filter(s => !existingIds.has(s.id));
+              const kept = prev.filter(sg => !scheduleIdSet.has(sg.scheduleId));
               return [...kept, ...mapped];
             });
           }
         }
       }
-      setTick(n => n + 1); // trigger re-render for Live Now status
-    }, 5 * 60 * 1000); // 5 minutes
 
+      setTick(n => n + 1);
+    }
+
+    // Run immediately then every 30 seconds
+    refresh();
+    const interval = setInterval(refresh, 30000);
     return () => clearInterval(interval);
-  }, [currentUser, schedules]);
+  }, [currentUser?.id, currentUser?.communityIds?.join(",")]);
 
   // Handle browser back gesture (swipe left on iOS Safari)
   useEffect(() => {
