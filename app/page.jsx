@@ -1284,7 +1284,7 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
     }
     setError("");
     // [DB INTEGRATION] POST or PUT to your schedules table
-    onSave({ ...(initial||{}), id:initial?.id||uid(), userId, hostUsername:username, platform:form.platform.trim(), communityId:form.communityId, daysOfWeek:[...form.daysOfWeek].sort((a,b)=>a-b), startTime:form.startTime, endTime:form.endTime, notes:form.notes.trim(), manualStatus:initial?.manualStatus??null, createdAt:initial?.createdAt||new Date().toISOString() });
+    onSave({ ...(initial||{}), id:initial?.id||null, isExisting:!!initial?.id, userId, hostUsername:username, platform:form.platform.trim(), communityId:form.communityId, daysOfWeek:[...form.daysOfWeek].sort((a,b)=>a-b), startTime:form.startTime, endTime:form.endTime, notes:form.notes.trim(), manualStatus:initial?.manualStatus??null, createdAt:initial?.createdAt||new Date().toISOString() });
   }
 
   return (
@@ -3209,24 +3209,24 @@ async function handleLogout() {
 
     let savedSchedule;
 
-    if (s.id) {
+    if (s.isExisting) {
       // Editing existing schedule — update by ID directly
       const { data, error } = await supabase
         .from("schedules")
         .update(payload)
         .eq("id", s.id)
         .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
-        .single();
+        .maybeSingle();
 
       if (error) { alert("Save failed: " + error.message); return; }
       savedSchedule = data;
     } else {
-      // New schedule — insert
+      // New schedule — insert (let Supabase generate the UUID)
       const { data, error } = await supabase
         .from("schedules")
         .insert(payload)
         .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
-        .single();
+        .maybeSingle();
 
       if (error) { alert("Save failed: " + error.message); return; }
       savedSchedule = data;
