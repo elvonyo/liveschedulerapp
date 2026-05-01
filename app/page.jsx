@@ -1918,7 +1918,7 @@ function PaywallScreen({ currentUser, onPaymentSuccess, onLogout }) {
             <p style={{color:"#fbbf24",fontSize:"11px",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",margin:"0 0 8px"}}>Full Access</p>
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"center",gap:"4px"}}>
               <span style={{color:"#fff",fontSize:"22px",fontWeight:900,marginTop:"6px"}}>$</span>
-              <span style={{color:"#fff",fontWeight:900,fontSize:"56px",lineHeight:1}}>2.99</span>
+              <span style={{color:"#fff",fontWeight:900,fontSize:"56px",lineHeight:1}}>4.99</span>
               <span style={{color:"rgba(255,255,255,0.5)",fontSize:"14px",alignSelf:"flex-end",marginBottom:"6px"}}>/mo</span>
             </div>
             <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",margin:"6px 0 0"}}>Cancel anytime</p>
@@ -1940,7 +1940,7 @@ function PaywallScreen({ currentUser, onPaymentSuccess, onLogout }) {
                   <span style={{width:18,height:18,border:"2.5px solid #92400e",borderTopColor:"transparent",borderRadius:"50%",display:"inline-block",animation:"spin 0.7s linear infinite"}} />
                   Processing…
                 </>
-              ) : <>🔓 Subscribe for $2.99/mo</>}
+              ) : <>🔓 Subscribe for $4.99/mo</>}
             </button>
             <p style={{color:"rgba(255,255,255,0.25)",fontSize:"11px",textAlign:"center",margin:"10px 0 0"}}>Secured by Stripe · Cancel anytime in settings</p>
           </div>
