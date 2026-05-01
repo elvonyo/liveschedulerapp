@@ -2773,10 +2773,19 @@ async function loadUserFromSupabase(authUser) {
 useEffect(() => {
   let active = true;
 
-  // Safety net — never stay stuck on "Loading account…" more than 8 seconds
+  // Safety net — never stay stuck on "Loading account…" more than 3 seconds
   const timeout = setTimeout(() => {
     if (active) setAuthLoading(false);
-  }, 8000);
+  }, 3000);
+
+  // Immediately check for existing session on mount
+  // This prevents "Please wait..." on first load
+  supabase.auth.getSession().then(({ data }) => {
+    if (!active) return;
+    if (!data.session) {
+      setAuthLoading(false);
+    }
+  });
 
   let isLoadingUser = false;
 
