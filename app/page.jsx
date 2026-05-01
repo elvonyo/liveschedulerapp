@@ -2752,6 +2752,28 @@ async function loadUserFromSupabase(authUser) {
       }));
 
       setSchedules(mappedSchedules);
+
+      // Load signups for all community schedules
+      const scheduleIds = mappedSchedules.map(s => s.id);
+      if (scheduleIds.length > 0) {
+        const { data: loadedSignups } = await supabase
+          .from("signups")
+          .select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at")
+          .in("schedule_id", scheduleIds);
+
+        if (loadedSignups) {
+          setSignups(loadedSignups.map(sg => ({
+            id:                sg.id,
+            occurrenceId:      sg.occurrence_id,
+            scheduleId:        sg.schedule_id,
+            displayName:       sg.display_name,
+            supporterUsername: sg.supporter_username || "",
+            plannedGiftAmount: sg.planned_gift_amount,
+            comment:           sg.comment || "",
+            createdAt:         sg.created_at,
+          })));
+        }
+      }
     }
   }
 
@@ -3271,9 +3293,51 @@ async function handleLogout() {
   }
 
   // ── Signups ──
-  function handleSignup(data)         { setSignups(p=>[data,...p]); }
-  function handleUpdateSignup(updated){ setSignups(p=>p.map(sg=>sg.id===updated.id?updated:sg)); }
-  function handleRemoveSignup(id)     { setSignups(p=>p.filter(sg=>sg.id!==id)); }
+  async function handleSignup(data) {
+    // Save signup to Supabase
+    const { data: saved, error } = await supabase
+      .from("signups")
+      .insert({
+        occurrence_id:       data.occurrenceId,
+        schedule_id:         data.scheduleId,
+        display_name:        data.displayName,
+        supporter_username:  data.supporterUsername || null,
+        planned_gift_amount: data.plannedGiftAmount ?? null,
+        comment:             data.comment || null,
+      })
+      .select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at")
+      .maybeSingle();
+
+    if (error) { alert("Sign up failed: " + error.message); return; }
+
+    const mapped = {
+      id:                saved.id,
+      occurrenceId:      saved.occurrence_id,
+      scheduleId:        saved.schedule_id,
+      displayName:       saved.display_name,
+      supporterUsername: saved.supporter_username || "",
+      plannedGiftAmount: saved.planned_gift_amount,
+      comment:           saved.comment || "",
+      createdAt:         saved.created_at,
+    };
+    setSignups(p => [mapped, ...p]);
+  }
+  async function handleUpdateSignup(updated) {
+    const { error } = await supabase
+      .from("signups")
+      .update({
+        planned_gift_amount: updated.plannedGiftAmount ?? null,
+        comment:             updated.comment || null,
+      })
+      .eq("id", updated.id);
+    if (error) { alert("Update failed: " + error.message); return; }
+    setSignups(p => p.map(sg => sg.id === updated.id ? updated : sg));
+  }
+  async function handleRemoveSignup(id) {
+    const { error } = await supabase.from("signups").delete().eq("id", id);
+    if (error) { alert("Remove failed: " + error.message); return; }
+    setSignups(p => p.filter(sg => sg.id !== id));
+  }
 
   if (authLoading) return (
   <>
