@@ -30,7 +30,13 @@ const WEEKS_OUT       = 2;
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
 
-function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function uid() {
+  // Generate a proper UUID v4 for Supabase compatibility
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 
 function formatTime(t) {
   if (!t) return "";
@@ -513,7 +519,7 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
           {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
           <div>
             <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Invite Code</label>
-            <input value={inviteCode} onChange={e=>setInviteCode(e.target.value)} placeholder="e.g. DOOM2024"
+            <input value={inviteCode} onChange={e=>setInviteCode(e.target.value)} placeholder="Enter invite code"
               style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",textTransform:"uppercase",fontFamily:"inherit"}}
               onKeyDown={e=>e.key==="Enter"&&handleJoin()} />
           </div>
@@ -539,7 +545,7 @@ function PostRegisterScreen({ newUser, communities, onCreateCommunity, onJoinCom
           {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
           <div>
             <label style={{color:"rgba(255,255,255,0.6)",fontSize:"12px",fontWeight:700,display:"block",marginBottom:"6px"}}>Community Name</label>
-            <input value={communityName} onChange={e=>setCommunityName(e.target.value)} placeholder="e.g. DOOMSQUAD"
+            <input value={communityName} onChange={e=>setCommunityName(e.target.value)} placeholder="e.g. HYPEGANG"
               style={{width:"100%",background:"rgba(255,255,255,0.1)",border:"none",borderRadius:"12px",padding:"14px 16px",fontSize:"16px",color:"#fff",outline:"none",boxSizing:"border-box",textTransform:"uppercase",fontFamily:"inherit"}}
               onKeyDown={e=>e.key==="Enter"&&handleCreate()} />
           </div>
@@ -697,7 +703,7 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
         <p style={S.title}>Join a Community</p>
         <p style={S.sub}>Enter the invite code from your community leader.</p>
         {err && <p style={S.err}>{err}</p>}
-        <input value={code} onChange={e=>setCode(e.target.value)} placeholder="e.g. DOOM2024"
+        <input value={code} onChange={e=>setCode(e.target.value)} placeholder="Enter invite code"
           style={{...IS.input,textTransform:"uppercase"}} onKeyDown={e=>e.key==="Enter"&&handleJoin()} />
         <div style={S.row}>
           <button onClick={closePanel} style={S.btnC}>Cancel</button>
@@ -708,7 +714,7 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
         <p style={S.title}>Create a Community</p>
         <p style={S.sub}>You'll be the leader. An invite code is generated automatically.</p>
         {err && <p style={S.err}>{err}</p>}
-        <input value={communityName} onChange={e=>setCommunityName(e.target.value)} placeholder="e.g. DOOMSQUAD"
+        <input value={communityName} onChange={e=>setCommunityName(e.target.value)} placeholder="e.g. HYPEGANG"
           style={{...IS.input,textTransform:"uppercase"}} onKeyDown={e=>e.key==="Enter"&&handleCreate()} />
         <div style={S.row}>
           <button onClick={closePanel} style={S.btnC}>Cancel</button>
