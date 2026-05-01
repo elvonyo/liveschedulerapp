@@ -15,7 +15,7 @@ import { supabase } from "../lib/supabaseClient";
  */
 
 
-// ─── Constants ─────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS = {
   UPCOMING:  "Upcoming",
@@ -2484,14 +2484,7 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
-  // Register service worker on app load
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js")
-        .then(reg => console.log("SW registered:", reg.scope))
-        .catch(e => console.warn("SW registration failed:", e));
-    }
-  }, []);
+
 
   // Keep a ref to current communityIds so refresh always has latest value
   const communityIdsRef = useRef([]);
@@ -3245,22 +3238,7 @@ async function handleLogout() {
   async function handleGoLive(id) {
     await handleStatusChange(id, STATUS.LIVE_NOW);
 
-    // Send push notification to all community subscribers
-    const sched = schedules.find(s => s.id === id);
-    if (sched) {
-      fetch("/api/push/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          communityId: sched.communityId,
-          title: `@${sched.hostUsername} is Live Now! 🔴`,
-          body: sched.notes
-            ? `${sched.platform} · ${sched.notes}`
-            : `${sched.platform} · ${formatTime(sched.startTime)} – ${formatTime(sched.endTime)}`,
-          url: "/",
-        }),
-      }).catch(e => console.warn("Push send failed:", e));
-    }
+
   }
 
   async function handleStatusChange(id, st) {
@@ -3390,7 +3368,6 @@ if (!currentUser && !pendingUser) return (
               )}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-              <NotificationBell currentUser={currentUser} activeCommunityId={activeCommunityId} />
               <UserMenu currentUser={currentUser} onLogout={handleLogout} onManage={handleManageSubscription} onHelp={handleShowHelp} />
             </div>
           </div>
