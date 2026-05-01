@@ -2166,6 +2166,10 @@ const FAQ_ITEMS = [
     q: "Can I sign up to support a live without entering a gift amount?",
     a: "Yes, the gift amount is completely optional. You can sign up with just your name and nothing else.",
   },
+  {
+    q: "How do I see all lives happening right now across all my communities?",
+    a: "Tap the red LIVE badge in the top header — it shows a count of how many people are live across all your communities. Tapping it opens a single view of every active live session, no matter which community they're in.",
+  },
 ];
 
 const HOWTO_ITEMS = [
