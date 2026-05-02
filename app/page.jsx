@@ -900,8 +900,8 @@ function CommunitySwitcher({ myGroups, activeCommunityId, onSwitch, onJoin, onCr
 
 // ─── Occurrence Card ───────────────────────────────────────────────────────────
 
-function OccurrenceCard({ occurrence, signups, onView, isOwner, onGoLive }) {
-  const { schedule, status, dateObj, daysAway, occurrenceId } = occurrence;
+function OccurrenceCard({ occurrence, signups, onView, isOwner, onGoLive, onViewBattle }) {
+  const { schedule, status, dateObj, daysAway, occurrenceId, isBattle, battle } = occurrence;
   const ss        = signups.filter(sg => sg.occurrenceId === occurrenceId);
   const totalGift = ss.reduce((sum, sg) => sum + (sg.plannedGiftAmount || 0), 0);
   const dayLabel  = daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : formatDate(dateObj);
@@ -910,7 +910,10 @@ function OccurrenceCard({ occurrence, signups, onView, isOwner, onGoLive }) {
     <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"12px",display:"flex",flexDirection:"column",gap:"8px",boxSizing:"border-box"}}>
       <div>
         <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px",flexWrap:"wrap"}}>
-          <Badge status={status} />
+          {isBattle
+            ? <span style={{background:"rgba(251,100,36,0.2)",color:"#fb923c",fontSize:"10px",fontWeight:900,padding:"2px 8px",borderRadius:"20px"}}>🔥 Battle</span>
+            : <Badge status={status} />
+          }
           <span style={{color:"rgba(255,255,255,0.5)",fontSize:"12px"}}>{platformIcon(schedule.platform)}</span>
         </div>
         <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:0}}>@{schedule.hostUsername}</p>
@@ -932,7 +935,7 @@ function OccurrenceCard({ occurrence, signups, onView, isOwner, onGoLive }) {
         )}
       </div>
       <div style={{display:"flex",gap:"6px",marginTop:"auto"}}>
-        <button onClick={() => onView(occurrenceId)} style={{flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px",cursor:"pointer"}}>
+        <button onClick={() => isBattle ? onViewBattle(occurrenceId) : onView(occurrenceId)} style={{flex:1,background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px",cursor:"pointer"}}>
           View & Sign Up
         </button>
         {isOwner && status !== STATUS.LIVE_NOW && status !== STATUS.CANCELLED && daysAway === 0 && (
@@ -1644,6 +1647,9 @@ function HostCard({ schedule, occurrences, signups, onView, isOwner, onGoLive })
             <span style={{color:"rgba(255,255,255,0.5)",fontSize:"11px"}}>{platformIcon(schedule.platform)}</span>
           </div>
           <p style={{color:"#fff",fontWeight:900,fontSize:"14px",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>@{schedule.hostUsername}</p>
+        {isBattle && battle?.opponentUsername && (
+          <p style={{color:"#fb923c",fontSize:"11px",fontWeight:700,margin:"1px 0 0"}}>vs @{battle.opponentUsername}</p>
+        )}
           <p style={{color:"#fbbf24",fontSize:"11px",fontWeight:700,margin:"2px 0 0"}}>{dayLabel}</p>
           <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"1px 0 0"}}>{formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}</p>
         </div>
@@ -1825,7 +1831,7 @@ function MemberCount({ communityId, currentUserId, canManage, onRoleChange, onRe
   );
 }
 
-function DashboardView({ schedules, signups, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, onLeaveCommunity, onDeleteCommunity, activeCommunityId, onSwitchCommunity, isLeaderOrMod }) {
+function DashboardView({ schedules, signups, battles, currentUser, communities, tick, onView, onGoLive, onAddSchedule, onJoinCommunity, onCreateCommunity, onLeaveCommunity, onDeleteCommunity, activeCommunityId, onSwitchCommunity, isLeaderOrMod, onViewBattle }) {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
@@ -1840,9 +1846,54 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
   // All occurrences expanded (7 days out for ALL, 4 for Coming Up)
   const allOccurrences = useMemo(() => {
     const occ = communitySchedules.flatMap(s => expandOccurrences(s));
+
+    // Convert battles to occurrence-like objects for the Lives feed
+    const now = new Date();
+    const nowMidnight = new Date(now); nowMidnight.setHours(0,0,0,0);
+    const battleOcc = (battles || [])
+      .filter(b => b.communityId === activeCommunityId)
+      .map(b => {
+        const battleDt  = new Date(b.battleAt);
+        const daysAway  = Math.round((new Date(battleDt.toDateString()) - nowMidnight) / 86400000);
+        const [sh, sm]  = b.startTime.split(":").map(Number);
+        const [eh, em]  = b.endTime.split(":").map(Number);
+        const nowMins   = now.getHours() * 60 + now.getMinutes();
+        const startMins = sh * 60 + sm;
+        const endMins   = eh * 60 + em;
+        const isToday   = battleDt.toDateString() === now.toDateString();
+        const isLive    = isToday && nowMins >= startMins && nowMins < endMins;
+        const status    = b.status === "cancelled" ? STATUS.CANCELLED
+                        : isLive ? STATUS.LIVE_NOW
+                        : STATUS.UPCOMING;
+        return {
+          occurrenceId: `battle__${b.id}`,
+          scheduleId:   b.id,
+          isBattle:     true,
+          battle:       b,
+          schedule: {
+            id:           b.id,
+            userId:       b.userId,
+            communityId:  b.communityId,
+            hostUsername: b.hostUsername,
+            platform:     b.platform,
+            startTime:    b.startTime,
+            endTime:      b.endTime,
+            notes:        b.notes,
+            daysOfWeek:   [],
+            manualStatus: b.status === "cancelled" ? STATUS.CANCELLED : null,
+          },
+          dateObj:  battleDt,
+          date:     battleDt.toISOString().slice(0,10),
+          daysAway,
+          status,
+          isLive,
+        };
+      });
+
+    const all = [...occ, ...battleOcc];
     const order = { [STATUS.LIVE_NOW]:0, [STATUS.UPCOMING]:1, [STATUS.COMPLETED]:2, [STATUS.CANCELLED]:3 };
-    return occ.sort((a,b) => { const oa=order[a.status]??9, ob=order[b.status]??9; return oa!==ob?oa-ob:a.dateObj-b.dateObj; });
-  }, [communitySchedules, tick]);
+    return all.sort((a,b) => { const oa=order[a.status]??9, ob=order[b.status]??9; return oa!==ob?oa-ob:a.dateObj-b.dateObj; });
+  }, [communitySchedules, battles, activeCommunityId, tick]);
 
   // Filter occurrences for display — one card per occurrence
   const filteredOcc = useMemo(() => {
@@ -1943,6 +1994,7 @@ function DashboardView({ schedules, signups, currentUser, communities, tick, onV
                   occurrence={occ}
                   signups={signups}
                   onView={onView}
+                  onViewBattle={onViewBattle}
                   isOwner={occ.schedule.userId === currentUser.id}
                   onGoLive={onGoLive}
                 />
@@ -4041,6 +4093,8 @@ if (!currentUser && !pendingUser) return (
               tick={tick}
               activeCommunityId={activeCommunityId}
               isLeaderOrMod={isLeaderOrMod}
+              battles={battles}
+              onViewBattle={id => { setView(VIEWS.BATTLES); }}
               onSwitchCommunity={id=>{ setActiveCommunityId(id); setView(VIEWS.DASHBOARD); }}
               onJoinCommunity={handleJoinCommunity}
               onCreateCommunity={handleCreateFromDashboard}
