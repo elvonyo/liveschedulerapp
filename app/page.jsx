@@ -256,8 +256,8 @@ function SupporterRow({ signup }) {
 
 // ─── Landing Page ──────────────────────────────────────────────────────────────
 function LandingPage({ onGetStarted, onSignIn }) {
-  const [visible, setVisible] = React.useState(false);
-  React.useEffect(() => { setTimeout(() => setVisible(true), 50); }, []);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { setTimeout(() => setVisible(true), 50); }, []);
 
   const fadeUp = (delay) => ({
     opacity: visible ? 1 : 0,
@@ -362,8 +362,8 @@ function LandingPage({ onGetStarted, onSignIn }) {
   );
 }
 
-function AuthScreen({ onLogin, onRegister }) {
-  const [tab, setTab] = useState("login");
+function AuthScreen({ onLogin, onRegister, initialTab = "login" }) {
+  const [tab, setTab] = useState(initialTab);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -2600,6 +2600,7 @@ export default function App() {
   const [activeCommunityId, setActiveCommunityId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showLanding, setShowLanding] = useState(true);
+  const [initialTab, setInitialTab] = useState("login");
   const [shareScheduleFor, setShareScheduleFor] = useState(null); // community to share schedule into
 
   const [tick, setTick] = useState(0);
@@ -3463,10 +3464,10 @@ if (!currentUser && !pendingUser) return (
     <GlobalStyles />
     {showLanding
       ? <LandingPage
-          onGetStarted={() => setShowLanding(false)}
-          onSignIn={() => setShowLanding(false)}
+          onGetStarted={() => { setShowLanding(false); setInitialTab("register"); }}
+          onSignIn={() => { setShowLanding(false); setInitialTab("login"); }}
         />
-      : <AuthScreen onLogin={handleLogin} onRegister={handleRegister} />
+      : <AuthScreen onLogin={handleLogin} onRegister={handleRegister} initialTab={initialTab} />
     }
   </>
 );
