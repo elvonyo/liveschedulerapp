@@ -281,7 +281,14 @@ function AuthScreen({ onLogin, onRegister }) {
       ? await onLogin({ email: email.trim(), password })
       : await onRegister({ email: email.trim(), username: username.trim(), password });
 
-    if (result?.error) setError(result.error);
+    if (result?.error) {
+      setError(result.error);
+    } else if (result?.confirmEmail) {
+      setError("");
+      setTab("login");
+      // Show success message
+      setError("✅ Account created! Check your email to confirm, then sign in.");
+    }
 
     setLoading(false);
   }
@@ -2898,29 +2905,19 @@ async function handleLogout() {
     }
   }
   async function handleRegister({ email, username, password }) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { username } },
-  });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username } },
+    });
 
-  if (error) return { error: error.message };
+    if (error) return { error: error.message };
 
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .insert({ id: data.user.id, username });
-
-  if (profileError && !profileError.message?.toLowerCase().includes("duplicate")) {
-    return { error: profileError.message };
+    // Profile will be created automatically in loadUserFromSupabase
+    // when the user confirms their email and logs in.
+    // Username is stored in auth metadata for that purpose.
+    return { error: null, confirmEmail: true };
   }
-
-  const appUser = await loadUserFromSupabase(data.user);
-  if (appUser) {
-    setPendingUser(appUser);
-  }
-  setAuthLoading(false);
-  return { error: null };
-}
 
   async function handleCreateCommunity(community) {
     const owner = pendingUser || currentUser;
