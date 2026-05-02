@@ -254,6 +254,114 @@ function SupporterRow({ signup }) {
 
 // ─── Auth Screen ───────────────────────────────────────────────────────────────
 
+// ─── Landing Page ──────────────────────────────────────────────────────────────
+function LandingPage({ onGetStarted, onSignIn }) {
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(() => { setTimeout(() => setVisible(true), 50); }, []);
+
+  const fadeUp = (delay) => ({
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(24px)",
+    transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+  });
+
+  // Mock community data to show app is active
+  const mockLives = [
+    { username: "KingJayLive", platform: "TikTok", time: "9:00 PM – 11:00 PM", days: "Mon · Wed · Fri", supporters: 12, gift: 47, live: true },
+    { username: "QueenSasha", platform: "Instagram", time: "7:00 PM – 9:00 PM", days: "Tue · Thu · Sat", supporters: 8, gift: 32, live: false },
+    { username: "LiveWithRico", platform: "TikTok", time: "10:00 PM – 12:00 AM", days: "Wed · Fri · Sun", supporters: 21, gift: 85, live: true },
+  ];
+
+  return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0a0c18 0%,#0d1025 50%,#0a0e1e 100%)",fontFamily:"'DM Sans','Segoe UI',sans-serif",overflowX:"hidden",position:"relative"}}>
+      
+      {/* Ambient glow effects */}
+      <div style={{position:"fixed",top:"-20%",left:"-10%",width:"500px",height:"500px",background:"radial-gradient(circle,rgba(251,191,36,0.08) 0%,transparent 70%)",pointerEvents:"none",zIndex:0}} />
+      <div style={{position:"fixed",bottom:"-20%",right:"-10%",width:"600px",height:"600px",background:"radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 70%)",pointerEvents:"none",zIndex:0}} />
+
+      <div style={{position:"relative",zIndex:1,maxWidth:"480px",margin:"0 auto",padding:"0 20px"}}>
+        
+        {/* Hero */}
+        <div style={{paddingTop:"60px",textAlign:"center",...fadeUp(0)}}>
+          <div style={{width:80,height:80,borderRadius:"22px",background:"linear-gradient(135deg,#1a1f35,#252b48)",border:"1px solid rgba(251,191,36,0.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",fontSize:"38px",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+            📡
+          </div>
+          <h1 style={{color:"#fff",fontWeight:900,fontSize:"32px",margin:"0 0 8px",letterSpacing:"-0.5px",lineHeight:1.1}}>
+            LiveSupport<br/><span style={{color:"#fbbf24"}}>Scheduler</span>
+          </h1>
+          <p style={{color:"rgba(255,255,255,0.5)",fontSize:"15px",margin:"0 0 32px",lineHeight:1.6}}>
+            Organize live times, coordinate supporters,<br/>and plan gifts — all in one place.
+          </p>
+
+          {/* CTA buttons */}
+          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"40px"}}>
+            <button onClick={onGetStarted}
+              style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"16px",border:"none",borderRadius:"16px",padding:"16px",cursor:"pointer",boxShadow:"0 4px 20px rgba(251,191,36,0.3)",letterSpacing:"0.3px"}}>
+              Get Started — $4.99/mo
+            </button>
+            <button onClick={onSignIn}
+              style={{width:"100%",background:"rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.7)",fontWeight:700,fontSize:"15px",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"16px",padding:"14px",cursor:"pointer"}}>
+              Sign In
+            </button>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div style={{...fadeUp(0.15),marginBottom:"32px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
+            {[
+              { icon:"📅", label:"Weekly Schedule", desc:"Set your live days & times" },
+              { icon:"🎁", label:"Gift Planning", desc:"Coordinate supporter gifts" },
+              { icon:"🔴", label:"Live Alerts", desc:"See who's live right now" },
+            ].map((f, i) => (
+              <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:"14px",padding:"14px 10px",textAlign:"center"}}>
+                <div style={{fontSize:"22px",marginBottom:"6px"}}>{f.icon}</div>
+                <p style={{color:"#fff",fontWeight:700,fontSize:"11px",margin:"0 0 3px",lineHeight:1.2}}>{f.label}</p>
+                <p style={{color:"rgba(255,255,255,0.35)",fontSize:"10px",margin:0,lineHeight:1.3}}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Live preview cards */}
+        <div style={{...fadeUp(0.25),marginBottom:"40px"}}>
+          <p style={{color:"rgba(255,255,255,0.3)",fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",margin:"0 0 12px",textAlign:"center"}}>Live right now in communities</p>
+          <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+            {mockLives.map((live, i) => (
+              <div key={i} style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"14px",padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",border:"1px solid rgba(255,255,255,0.06)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${i===0?"#f59e0b,#ef4444":i===1?"#8b5cf6,#6366f1":"#10b981,#0891b2"})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"13px",flexShrink:0}}>
+                    {live.username[0]}
+                  </div>
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                      <p style={{color:"#fff",fontWeight:700,fontSize:"12px",margin:0}}>@{live.username}</p>
+                      {live.live && <span style={{background:"#ef4444",color:"#fff",fontSize:"8px",fontWeight:900,padding:"1px 5px",borderRadius:"20px"}}>LIVE</span>}
+                    </div>
+                    <p style={{color:"rgba(255,255,255,0.4)",fontSize:"10px",margin:"1px 0 0"}}>{live.platform} · {live.time}</p>
+                  </div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <p style={{color:"#fbbf24",fontWeight:900,fontSize:"12px",margin:0}}>{live.supporters} 👥</p>
+                  <p style={{color:"rgba(255,255,255,0.3)",fontSize:"10px",margin:"1px 0 0"}}>${live.gift} planned</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom note */}
+        <div style={{...fadeUp(0.35),textAlign:"center",paddingBottom:"40px"}}>
+          <p style={{color:"rgba(255,255,255,0.2)",fontSize:"11px",margin:0,lineHeight:1.6}}>
+            No payments processed inside supporter planning.<br/>Gift amounts are for coordination only.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 function AuthScreen({ onLogin, onRegister }) {
   const [tab, setTab] = useState("login");
   const [email, setEmail] = useState("");
@@ -2491,6 +2599,7 @@ export default function App() {
   const [activeId,    setActiveId]    = useState(null);
   const [activeCommunityId, setActiveCommunityId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
   const [shareScheduleFor, setShareScheduleFor] = useState(null); // community to share schedule into
 
   const [tick, setTick] = useState(0);
@@ -3352,7 +3461,13 @@ async function handleLogout() {
 if (!currentUser && !pendingUser) return (
   <>
     <GlobalStyles />
-    <AuthScreen onLogin={handleLogin} onRegister={handleRegister} />
+    {showLanding
+      ? <LandingPage
+          onGetStarted={() => setShowLanding(false)}
+          onSignIn={() => setShowLanding(false)}
+        />
+      : <AuthScreen onLogin={handleLogin} onRegister={handleRegister} />
+    }
   </>
 );
 
