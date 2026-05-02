@@ -15,7 +15,7 @@ import { supabase } from "../lib/supabaseClient";
  */
 
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS = {
   UPCOMING:  "Upcoming",
@@ -2285,6 +2285,18 @@ const FAQ_ITEMS = [
     q: "How do I see all lives happening right now across all my communities?",
     a: "Tap the red LIVE badge in the top header — it shows a count of how many people are live across all your communities. Tapping it opens a single view of every active live session, no matter which community they're in.",
   },
+  {
+    q: "What is a Battle Live?",
+    a: "A Battle Live is a scheduled head-to-head live session between two community members on their streaming platform. The battle happens on the platform — this app just lets you schedule it, coordinate supporters, and plan gifts ahead of time.",
+  },
+  {
+    q: "How do I schedule a Battle Live?",
+    a: "Tap the 🔥 Battles tab at the bottom → tap '+ Schedule Battle' → enter your opponent's username, platform, date and time, and any notes → tap Schedule Battle. Your community will see it listed and can sign up to support you.",
+  },
+  {
+    q: "Can I cancel a Battle Live?",
+    a: "Yes — open the battle detail page and tap 'Cancel This Battle'. The battle stays visible so supporters know it was cancelled. If plans change, you can also tap 'Uncancel Battle' to restore it. Cancelled battles are automatically removed after 1 week.",
+  },
 ];
 
 const HOWTO_ITEMS = [
@@ -2322,6 +2334,17 @@ const HOWTO_ITEMS = [
       "Fill in your name and optionally a planned gift amount (this does NOT charge you).",
       "Tap Sign Me Up — you'll appear in the host's supporter list.",
       "You can edit or remove your signup anytime by reopening the same live.",
+    ],
+  },
+  {
+    title: "How to Schedule a Battle Live",
+    steps: [
+      "Tap the 🔥 Battles tab in the bottom navigation.",
+      "Tap '+ Schedule Battle' in the top right.",
+      "Type your opponent's username — they don't need to be in the community.",
+      "Enter the platform, date, start and end time, and any notes.",
+      "Tap 'Schedule Battle' — your community will see it and can sign up to support you.",
+      "To cancel, open the battle and tap 'Cancel This Battle'. Tap 'Uncancel Battle' if plans change.",
     ],
   },
 ];
@@ -2583,14 +2606,340 @@ function AllLiveView({ schedules, signups, communities, currentUser, onView, onG
   );
 }
 
+// ─── Battle Components ────────────────────────────────────────────────────────
+
+function BattleCard({ battle, onView, currentUserId }) {
+  const now      = new Date();
+  const battleDt = new Date(battle.battleAt);
+  const isPast   = battleDt < now;
+  const isToday  = battleDt.toDateString() === now.toDateString();
+  const isCancelled = battle.status === "cancelled";
+  const diffMs   = battleDt - now;
+  const daysAway = Math.floor(diffMs / 86400000);
+
+  const dayLabel = isCancelled ? "Cancelled"
+    : isToday    ? "Today"
+    : daysAway === 1 ? "Tomorrow"
+    : formatDate(battleDt);
+
+  const borderColor = isCancelled ? "rgba(239,68,68,0.3)"
+    : isToday ? "rgba(251,191,36,0.4)"
+    : "rgba(255,255,255,0.06)";
+
+  return (
+    <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"16px",padding:"14px",border:`1px solid ${borderColor}`,display:"flex",flexDirection:"column",gap:"10px",opacity:isCancelled?0.6:1}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"8px"}}>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px",flexWrap:"wrap"}}>
+            <span style={{background:isCancelled?"rgba(239,68,68,0.2)":"rgba(251,100,36,0.2)",color:isCancelled?"#f87171":"#fb923c",fontSize:"10px",fontWeight:900,padding:"2px 8px",borderRadius:"20px"}}>
+              {isCancelled ? "❌ Cancelled" : "🔥 Battle"}
+            </span>
+            <span style={{color:"rgba(255,255,255,0.4)",fontSize:"10px"}}>{platformIcon(battle.platform)} {battle.platform}</span>
+          </div>
+          <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:"0 0 2px"}}>@{battle.hostUsername}</p>
+          <p style={{color:"#fb923c",fontWeight:700,fontSize:"11px",margin:"0 0 1px"}}> vs @{battle.opponentUsername}</p>
+          <p style={{color:isCancelled?"#f87171":"#fbbf24",fontSize:"11px",fontWeight:700,margin:"2px 0 0"}}>{dayLabel}</p>
+          <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",margin:"1px 0 0"}}>{formatTime(battle.startTime)} – {formatTime(battle.endTime)}</p>
+        </div>
+      </div>
+
+      {battle.notes && (
+        <p style={{color:"rgba(255,255,255,0.45)",fontSize:"11px",background:"rgba(255,255,255,0.05)",borderRadius:"8px",padding:"5px 8px",margin:0}}>{battle.notes}</p>
+      )}
+
+      {/* Stats */}
+      <div style={{display:"flex",gap:"6px"}}>
+        <div style={{background:"rgba(255,255,255,0.08)",borderRadius:"8px",padding:"5px",textAlign:"center",flex:1}}>
+          <p style={{color:"#fff",fontWeight:900,fontSize:"13px",margin:0}}>{battle.signups?.length || 0}</p>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"10px",margin:"2px 0 0"}}>supporters</p>
+        </div>
+        {(battle.signups?.reduce((s,sg)=>s+(sg.plannedGiftAmount||0),0)||0) > 0 && (
+          <div style={{background:"#fbbf24",borderRadius:"8px",padding:"5px",textAlign:"center",flex:1}}>
+            <p style={{color:"#1c1400",fontWeight:900,fontSize:"13px",margin:0}}>${battle.signups.reduce((s,sg)=>s+(sg.plannedGiftAmount||0),0)}</p>
+            <p style={{color:"rgba(28,20,0,0.6)",fontSize:"10px",margin:"2px 0 0"}}>planned 🎁</p>
+          </div>
+        )}
+      </div>
+
+      <button onClick={() => onView(battle.id)}
+        style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px",cursor:"pointer"}}>
+        View & Sign Up
+      </button>
+    </div>
+  );
+}
+
+function BattleForm({ communityId, userId, username, myGroups, onSave, onCancel, initial }) {
+  const [form, setForm] = useState({
+    communityId: initial?.communityId ?? communityId ?? myGroups[0]?.id ?? "",
+    platform:    initial?.platform    ?? "",
+    opponent:    initial?.opponent    ?? "",
+    battleDate:  initial?.battleDate  ?? "",
+    startTime:   initial?.startTime   ?? "21:00",
+    endTime:     initial?.endTime     ?? "23:00",
+    notes:       initial?.notes       ?? "",
+    replacesScheduleId: initial?.replacesScheduleId ?? "",
+  });
+  const [err, setErr] = useState("");
+
+  function handleSubmit() {
+    if (!form.opponent.trim()) { setErr("Enter your opponent's username."); return; }
+    if (!form.battleDate)      { setErr("Pick a date for the battle."); return; }
+    if (!form.startTime || !form.endTime) { setErr("Set a start and end time."); return; }
+    setErr("");
+    onSave({
+      ...(initial || {}),
+      id:                 initial?.id || uid(),
+      communityId:        form.communityId,
+      hostUsername:       username,
+      userId,
+      platform:           form.platform,
+      opponentUsername:   form.opponent.trim().replace(/^@/, ""),
+      battleAt:           `${form.battleDate}T${form.startTime}:00`,
+      startTime:          form.startTime,
+      endTime:            form.endTime,
+      notes:              form.notes.trim(),
+      replacesScheduleId: form.replacesScheduleId || null,
+      status:             "scheduled",
+      isExisting:         !!initial?.id,
+    });
+  }
+
+  const inputStyle = { width:"100%", background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"12px", padding:"12px 14px", color:"#fff", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"inherit" };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h2 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>🔥 Schedule a Battle</h2>
+        <button onClick={onCancel} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:"14px"}}>✕ Cancel</button>
+      </div>
+
+      <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",margin:0}}>Your username <strong style={{color:"#fbbf24"}}>@{username}</strong> is shown as host automatically.</p>
+
+      {myGroups.length > 1 && (
+        <div>
+          <label style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:600,display:"block",marginBottom:"6px"}}>Community *</label>
+          <select value={form.communityId} onChange={e=>setForm(p=>({...p,communityId:e.target.value}))} style={{...inputStyle}}>
+            {myGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+        </div>
+      )}
+
+      <div>
+        <label style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:600,display:"block",marginBottom:"6px"}}>Opponent Username *</label>
+        <input value={form.opponent} onChange={e=>setForm(p=>({...p,opponent:e.target.value}))} placeholder="@username" style={inputStyle} />
+      </div>
+
+      <div>
+        <label style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:600,display:"block",marginBottom:"6px"}}>Platform *</label>
+        <input value={form.platform} onChange={e=>setForm(p=>({...p,platform:e.target.value}))} placeholder="Where are you streaming?" style={inputStyle} />
+      </div>
+
+      <div>
+        <label style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:600,display:"block",marginBottom:"6px"}}>Battle Date *</label>
+        <input type="date" value={form.battleDate} onChange={e=>setForm(p=>({...p,battleDate:e.target.value}))} style={inputStyle} />
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
+        <div>
+          <label style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:600,display:"block",marginBottom:"6px"}}>Start Time *</label>
+          <input type="time" value={form.startTime} onChange={e=>setForm(p=>({...p,startTime:e.target.value}))} style={inputStyle} />
+        </div>
+        <div>
+          <label style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:600,display:"block",marginBottom:"6px"}}>End Time *</label>
+          <input type="time" value={form.endTime} onChange={e=>setForm(p=>({...p,endTime:e.target.value}))} style={inputStyle} />
+        </div>
+      </div>
+
+      <div>
+        <label style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",fontWeight:600,display:"block",marginBottom:"6px"}}>Notes / Theme (optional)</label>
+        <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Any details about the battle..." rows={3} style={{...inputStyle,resize:"none"}} />
+      </div>
+
+      {err && <p style={{color:"#f87171",fontSize:"13px",margin:0}}>{err}</p>}
+
+      <button onClick={handleSubmit}
+        style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"15px",border:"none",borderRadius:"14px",padding:"14px",cursor:"pointer"}}>
+        Schedule Battle 🔥
+      </button>
+    </div>
+  );
+}
+
+function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUpdateSignup, onRemoveSignup, onCancel, onUncancel }) {
+  const battleDt    = new Date(battle.battleAt);
+  const isOwn       = battle.userId === currentUser.id;
+  const isCancelled = battle.status === "cancelled";
+  const ss          = signups.filter(sg => sg.battleId === battle.id);
+  const totalGift   = ss.reduce((s, sg) => s + (sg.plannedGiftAmount || 0), 0);
+  const mySignup    = ss.find(sg =>
+    sg.displayName?.toLowerCase() === currentUser.username.toLowerCase() ||
+    sg.supporterUsername?.replace(/^@/,"").toLowerCase() === currentUser.username.toLowerCase()
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:"4px",background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontWeight:700,cursor:"pointer",padding:0}}>← Back</button>
+
+      {/* Hero */}
+      <div style={{background:"linear-gradient(135deg,#7c2d12,#9a3412)",borderRadius:"18px",padding:"20px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",flexWrap:"wrap"}}>
+          <span style={{background:"rgba(251,100,36,0.3)",color:"#fb923c",fontSize:"11px",fontWeight:900,padding:"3px 10px",borderRadius:"20px"}}>
+            {isCancelled ? "❌ Cancelled" : "🔥 Battle Live"}
+          </span>
+          <span style={{color:"rgba(255,255,255,0.7)",fontSize:"12px"}}>{platformIcon(battle.platform)} {battle.platform}</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"8px"}}>
+          <div style={{textAlign:"center"}}>
+            <p style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>@{battle.hostUsername}</p>
+            <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0"}}>Host</p>
+          </div>
+          <div style={{color:"#fb923c",fontWeight:900,fontSize:"22px"}}>VS</div>
+          <div style={{textAlign:"center"}}>
+            <p style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>@{battle.opponentUsername}</p>
+            <p style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",margin:"2px 0 0"}}>Opponent</p>
+          </div>
+        </div>
+        <p style={{color:"#fbbf24",fontWeight:700,fontSize:"14px",margin:"4px 0 0"}}>{formatDate(battleDt)}</p>
+        <p style={{color:"rgba(255,255,255,0.7)",fontSize:"13px",margin:"2px 0 0"}}>{formatTime(battle.startTime)} – {formatTime(battle.endTime)}</p>
+        {battle.notes && <div style={{marginTop:"10px",background:"rgba(0,0,0,0.2)",borderRadius:"10px",padding:"10px 14px"}}><p style={{color:"rgba(255,255,255,0.9)",fontSize:"13px",margin:0}}>{battle.notes}</p></div>}
+      </div>
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+        <Pill label="Supporters" value={ss.length} />
+        <Pill label="🎁 Expected" value={totalGift>0?`$${totalGift}`:"—"} accent={totalGift>0} />
+      </div>
+
+      {/* Signup */}
+      {!isCancelled && (
+        isOwn
+          ? (
+            <div style={{background:"rgba(251,191,36,0.12)",border:"1px solid rgba(251,191,36,0.25)",borderRadius:"16px",padding:"18px",textAlign:"center"}}>
+              <p style={{color:"#fbbf24",fontWeight:900,fontSize:"14px",margin:"0 0 4px"}}>This is your battle</p>
+              <p style={{color:"rgba(255,255,255,0.45)",fontSize:"12px",margin:"0 0 12px"}}>Only other users can sign up to support this battle.</p>
+              <div style={{display:"flex",gap:"8px",justifyContent:"center",flexWrap:"wrap"}}>
+                <button onClick={() => onCancel(battle.id)}
+                  style={{background:"rgba(239,68,68,0.18)",color:"#f87171",fontSize:"12px",fontWeight:800,border:"none",borderRadius:"10px",padding:"8px 16px",cursor:"pointer"}}>
+                  Cancel This Battle
+                </button>
+              </div>
+            </div>
+          )
+          : mySignup
+            ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
+            : <SignupForm occurrenceId={battle.id} scheduleId={battle.id} currentUser={currentUser} onSubmit={(data) => onSignup({...data, battleId: battle.id, occurrenceId: battle.id})} />
+      )}
+
+      {isCancelled && (
+        <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:"16px",padding:"16px",textAlign:"center"}}>
+          <p style={{color:"#f87171",fontWeight:900,fontSize:"14px",margin:"0 0 10px"}}>❌ This battle has been cancelled</p>
+          {isOwn && (
+            <button onClick={() => onUncancel(battle.id)}
+              style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 16px",cursor:"pointer"}}>
+              ↩️ Uncancel Battle
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Who's Coming */}
+      <div style={IS.card}>
+        <h3 style={{color:"#fff",fontWeight:900,fontSize:"15px",margin:0}}>Who's Coming ({ss.length})</h3>
+        {ss.length === 0
+          ? <p style={{color:"rgba(255,255,255,0.4)",fontSize:"13px",textAlign:"center",padding:"12px 0",margin:0}}>No supporters yet — be the first! 🌟</p>
+          : ss.map(sg => <SupporterRow key={sg.id} signup={sg} />)
+        }
+      </div>
+    </div>
+  );
+}
+
+function BattlesView({ battles, signups, currentUser, communities, activeCommunityId, onView, onAdd, onCancel, onUncancel, onSignup, onUpdateSignup, onRemoveSignup }) {
+  const [activeBattleId, setActiveBattleId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const myGroups = communities.filter(c => currentUser.communityIds?.includes(c.id));
+
+  const communityBattles = battles
+    .filter(b => b.communityId === activeCommunityId)
+    .sort((a, b) => new Date(a.battleAt) - new Date(b.battleAt));
+
+  const activeBattle = communityBattles.find(b => b.id === activeBattleId);
+
+  if (activeBattle) {
+    return (
+      <BattleDetailView
+        battle={activeBattle}
+        currentUser={currentUser}
+        signups={signups}
+        onBack={() => setActiveBattleId(null)}
+        onSignup={onSignup}
+        onUpdateSignup={onUpdateSignup}
+        onRemoveSignup={onRemoveSignup}
+        onCancel={(id) => { onCancel(id); setActiveBattleId(null); }}
+        onUncancel={onUncancel}
+      />
+    );
+  }
+
+  if (showForm) {
+    return (
+      <BattleForm
+        communityId={activeCommunityId}
+        userId={currentUser.id}
+        username={currentUser.username}
+        myGroups={myGroups}
+        onCancel={() => setShowForm(false)}
+        onSave={(battle) => { onAdd(battle); setShowForm(false); }}
+      />
+    );
+  }
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <h1 style={{color:"#fff",fontWeight:900,fontSize:"18px",margin:0}}>🔥 Battles</h1>
+        <button onClick={() => setShowForm(true)}
+          style={{background:"#fbbf24",color:"#1c1400",fontWeight:700,fontSize:"12px",border:"none",borderRadius:"10px",padding:"8px 14px",cursor:"pointer"}}>
+          + Schedule Battle
+        </button>
+      </div>
+
+      {communityBattles.length === 0 ? (
+        <div style={{textAlign:"center",padding:"60px 0"}}>
+          <p style={{fontSize:"40px",marginBottom:"12px"}}>⚔️</p>
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:"15px",fontWeight:600}}>No battles scheduled yet.</p>
+          <button onClick={() => setShowForm(true)}
+            style={{background:"none",border:"none",color:"#fbbf24",fontSize:"13px",textDecoration:"underline",cursor:"pointer",marginTop:"8px"}}>
+            Schedule one now
+          </button>
+        </div>
+      ) : (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))",gap:"12px"}}>
+          {communityBattles.map(battle => (
+            <BattleCard
+              key={battle.id}
+              battle={{...battle, signups: signups.filter(sg => sg.battleId === battle.id)}}
+              onView={(id) => setActiveBattleId(id)}
+              currentUserId={currentUser.id}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── App Root ──────────────────────────────────────────────────────────────────
 
-const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help", ALL_LIVE:"all_live" };
+const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help", ALL_LIVE:"all_live", BATTLES:"battles" };
 
 export default function App() {
   // [DB INTEGRATION] Replace all useState with useEffect + API/Supabase fetches on mount.
   const [communities, setCommunities] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [battles,   setBattles]   = useState([]);
   const [signups, setSignups] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState(SEED_USERS);
@@ -2704,12 +3053,15 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [view]);
 
-  // Set default active community when user logs in
+  // Set default active community when user logs in and load battles
   useEffect(() => {
     if (currentUser && !activeCommunityId) {
       setActiveCommunityId(currentUser.communityIds?.[0] ?? null);
     }
-  }, [currentUser]);
+    if (currentUser?.communityIds?.length) {
+      loadBattles(currentUser.communityIds);
+    }
+  }, [currentUser?.id]);
 
   const activeOccurrence = useMemo(() => {
     if (!activeId||!activeId.includes("__")) return null;
@@ -3450,6 +3802,104 @@ async function handleLogout() {
     setSignups(p => p.filter(sg => sg.id !== id));
   }
 
+  // ─── Battle Handlers ────────────────────────────────────────────────────────
+  async function handleAddBattle(battle) {
+    const payload = {
+      community_id:      battle.communityId,
+      user_id:           battle.userId,
+      host_username:     battle.hostUsername,
+      opponent_username: battle.opponentUsername,
+      platform:          battle.platform,
+      battle_at:         battle.battleAt,
+      start_time:        battle.startTime,
+      end_time:          battle.endTime,
+      notes:             battle.notes || null,
+      replaces_schedule_id: battle.replacesScheduleId || null,
+      status:            "scheduled",
+    };
+
+    const { data, error } = await supabase
+      .from("battles")
+      .insert(payload)
+      .select()
+      .maybeSingle();
+
+    if (error) { alert("Battle save failed: " + error.message); return; }
+
+    const mapped = {
+      id:                data.id,
+      communityId:       data.community_id,
+      userId:            data.user_id,
+      hostUsername:      data.host_username,
+      opponentUsername:  data.opponent_username,
+      platform:          data.platform,
+      battleAt:          data.battle_at,
+      startTime:         data.start_time ? String(data.start_time).slice(0,5) : "21:00",
+      endTime:           data.end_time   ? String(data.end_time).slice(0,5)   : "23:00",
+      notes:             data.notes || "",
+      replacesScheduleId: data.replaces_schedule_id,
+      status:            data.status,
+      createdAt:         data.created_at,
+    };
+    setBattles(p => [mapped, ...p]);
+  }
+
+  async function handleCancelBattle(battleId) {
+    const { error } = await supabase
+      .from("battles")
+      .update({ status: "cancelled" })
+      .eq("id", battleId);
+
+    if (error) { alert("Cancel failed: " + error.message); return; }
+    setBattles(p => p.map(b => b.id === battleId ? { ...b, status: "cancelled" } : b));
+  }
+
+  async function handleUncancelBattle(battleId) {
+    const { error } = await supabase
+      .from("battles")
+      .update({ status: "scheduled" })
+      .eq("id", battleId);
+
+    if (error) { alert("Uncancel failed: " + error.message); return; }
+    setBattles(p => p.map(b => b.id === battleId ? { ...b, status: "scheduled" } : b));
+  }
+
+  async function loadBattles(communityIds) {
+    if (!communityIds?.length) return;
+    const { data, error } = await supabase
+      .from("battles")
+      .select("*")
+      .in("community_id", communityIds);
+
+    if (error) { console.warn("Battle load error:", error.message); return; }
+
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    setBattles((data || [])
+      .filter(b => {
+        // Auto-remove cancelled battles older than 1 week
+        if (b.status === "cancelled") {
+          const cancelledAt = new Date(b.battle_at);
+          return cancelledAt > oneWeekAgo;
+        }
+        return true;
+      })
+      .map(b => ({
+        id:                b.id,
+        communityId:       b.community_id,
+        userId:            b.user_id,
+        hostUsername:      b.host_username,
+        opponentUsername:  b.opponent_username,
+        platform:          b.platform,
+        battleAt:          b.battle_at,
+        startTime:         b.start_time ? String(b.start_time).slice(0,5) : "21:00",
+        endTime:           b.end_time   ? String(b.end_time).slice(0,5)   : "23:00",
+        notes:             b.notes || "",
+        replacesScheduleId: b.replaces_schedule_id,
+        status:            b.status,
+        createdAt:         b.created_at,
+      })));
+  }
+
   if (authLoading) return (
   <>
     <GlobalStyles />
@@ -3521,6 +3971,7 @@ if (!currentUser && !pendingUser) return (
   const navItems = [
     { key:VIEWS.DASHBOARD, icon:"🏠", label:"Lives" },
     { key:VIEWS.MY,        icon:"📅", label:"My Schedule" },
+    { key:VIEWS.BATTLES,   icon:"🔥", label:"Battles" },
     ...(myLeaderCommunities.length>0 || isLeaderOrMod ? [{ key:VIEWS.ADMIN, icon:"👑", label:"Admin" }] : []),
   ];
 
@@ -3611,6 +4062,22 @@ if (!currentUser && !pendingUser) return (
               onSave={handleSaveSchedule}
               onGoLive={handleGoLive}
               onStatusChange={handleStatusChange}
+            />
+          )}
+
+          {view===VIEWS.BATTLES&&(
+            <BattlesView
+              battles={battles}
+              signups={signups}
+              currentUser={currentUser}
+              communities={communities}
+              activeCommunityId={activeCommunityId}
+              onAdd={handleAddBattle}
+              onCancel={handleCancelBattle}
+              onUncancel={handleUncancelBattle}
+              onSignup={handleSignup}
+              onUpdateSignup={handleUpdateSignup}
+              onRemoveSignup={handleRemoveSignup}
             />
           )}
 
