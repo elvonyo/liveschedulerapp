@@ -3032,6 +3032,9 @@ export default function App() {
       }
 
       setTick(n => n + 1);
+
+      // Also refresh battles
+      if (ids.length > 0) loadBattles(ids);
     }
 
     // Run immediately then every 30 seconds
@@ -3053,15 +3056,20 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [view]);
 
-  // Set default active community when user logs in and load battles
+  // Set default active community when user logs in
   useEffect(() => {
     if (currentUser && !activeCommunityId) {
       setActiveCommunityId(currentUser.communityIds?.[0] ?? null);
     }
-    if (currentUser?.communityIds?.length) {
-      loadBattles(currentUser.communityIds);
-    }
   }, [currentUser?.id]);
+
+  // Load battles whenever communityIds change (fires after communities load)
+  useEffect(() => {
+    const ids = currentUser?.communityIds || [];
+    if (ids.length > 0) {
+      loadBattles(ids);
+    }
+  }, [currentUser?.communityIds?.join(",")]);
 
   const activeOccurrence = useMemo(() => {
     if (!activeId||!activeId.includes("__")) return null;
@@ -3824,7 +3832,10 @@ async function handleLogout() {
       .select()
       .maybeSingle();
 
-    if (error) { alert("Battle save failed: " + error.message); return; }
+    if (error) { alert("Battle save failed: " + error.message); console.error("Battle error:", error); return; }
+    if (!data) { alert("Battle save failed: no data returned"); return; }
+
+    console.log("[BATTLE] Saved:", data);
 
     const mapped = {
       id:                data.id,
@@ -3834,8 +3845,8 @@ async function handleLogout() {
       opponentUsername:  data.opponent_username,
       platform:          data.platform,
       battleAt:          data.battle_at,
-      startTime:         data.start_time ? String(data.start_time).slice(0,5) : "21:00",
-      endTime:           data.end_time   ? String(data.end_time).slice(0,5)   : "23:00",
+      startTime:         battle.startTime,
+      endTime:           battle.endTime,
       notes:             data.notes || "",
       replacesScheduleId: data.replaces_schedule_id,
       status:            data.status,
