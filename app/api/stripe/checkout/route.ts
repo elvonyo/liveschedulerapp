@@ -19,20 +19,10 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, username } = await req.json();
 
-    // Debug: log all relevant env vars (values hidden, just checks existence)
-    console.log("ENV CHECK", {
-      hasSecretKey:  !!process.env.STRIPE_SECRET_KEY,
-      hasPriceId:    !!process.env.STRIPE_PRICE_ID,
-      priceIdValue:  process.env.STRIPE_PRICE_ID,   // log actual value to Vercel logs
-      hasAppUrl:     !!process.env.NEXT_PUBLIC_APP_URL,
-      hasSupabaseUrl:!!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    });
-
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    // Guard: catch missing price ID early with a clear message
     if (!process.env.STRIPE_PRICE_ID) {
       return NextResponse.json(
         { error: "STRIPE_PRICE_ID environment variable is not set on the server." },
@@ -62,14 +52,12 @@ export async function POST(req: NextRequest) {
         .eq("id", userId);
     }
 
-    const priceId = process.env.STRIPE_PRICE_ID;
-    console.log("Creating session with priceId:", priceId);
-
     const session = await getStripe().checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      allow_promotion_codes: true, // ← enables coupon code field at checkout
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/`,
       metadata: { supabase_user_id: userId },
