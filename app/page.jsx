@@ -2550,7 +2550,7 @@ function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
             </div>
           </button>
 
-          <button onClick={() => { setOpen(false); onLogout(); }} style={itemStyle}>
+          <button onClick={async () => { setOpen(false); await supabase.auth.signOut(); window.location.replace("/"); }} style={itemStyle}>
             <span style={{fontSize:"16px"}}>🚪</span>
             <p style={{color:"rgba(255,255,255,0.65)",fontSize:"13px",fontWeight:700,margin:0}}>Sign Out</p>
           </button>
@@ -3098,7 +3098,6 @@ export default function App() {
   // Handle browser back gesture (swipe left on iOS Safari)
   useEffect(() => {
     function handlePopState(e) {
-      // If we were on the detail view and user swiped back, go to dashboard
       if (view === VIEWS.DETAIL) {
         setView(VIEWS.DASHBOARD);
         setActiveId(null);
@@ -3107,6 +3106,20 @@ export default function App() {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [view]);
+
+  // Re-sync auth when app comes back into focus (after Stripe portal in PWA)
+  useEffect(() => {
+    async function handleVisibility() {
+      if (document.visibilityState === "visible" && currentUser) {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          window.location.replace("/");
+        }
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [currentUser?.id]);
 
   // Set default active community when user logs in
   useEffect(() => {
