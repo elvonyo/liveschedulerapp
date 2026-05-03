@@ -2497,15 +2497,32 @@ function HelpView({ onClose }) {
 
 function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
 
+  // Close on outside click using ref, not document listener
   useEffect(() => {
     if (!open) return;
     function handleClick(e) {
-      if (!e.target.closest("#user-menu")) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
     }
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    // Use capture phase and small delay to avoid immediate close
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleClick, true);
+    }, 100);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", handleClick, true);
+    };
   }, [open]);
+
+  async function doSignOut(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    await supabase.auth.signOut();
+    window.location.replace("/");
+  }
 
   const itemStyle = {
     width:"100%", display:"flex", alignItems:"center", gap:"12px",
@@ -2514,14 +2531,14 @@ function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
   };
 
   return (
-    <div id="user-menu" style={{position:"relative"}}>
+    <div ref={menuRef} style={{position:"relative"}}>
       <button onClick={() => setOpen(v => !v)}
         style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f43f5e)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:"13px",border:"none",cursor:"pointer",flexShrink:0}}>
         {currentUser.username[0].toUpperCase()}
       </button>
 
       {open && (
-        <div style={{position:"absolute",right:0,top:"calc(100% + 8px)",width:"220px",background:"#1e2340",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"18px",overflow:"hidden",zIndex:100,boxShadow:"0 8px 40px rgba(0,0,0,0.5)"}}>
+        <div style={{position:"absolute",right:0,top:"calc(100% + 8px)",width:"220px",background:"#1e2340",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"18px",overflow:"hidden",zIndex:1000,boxShadow:"0 8px 40px rgba(0,0,0,0.5)"}}>
 
           {/* User info */}
           <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
@@ -2531,7 +2548,6 @@ function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
             </p>
           </div>
 
-          {/* Menu items */}
           {currentUser.hasPaid && (
             <button onClick={() => { setOpen(false); onManage(); }} style={itemStyle}>
               <span style={{fontSize:"16px"}}>💳</span>
@@ -2550,7 +2566,7 @@ function UserMenu({ currentUser, onLogout, onManage, onHelp }) {
             </div>
           </button>
 
-          <button onClick={async () => { setOpen(false); await supabase.auth.signOut(); window.location.replace("/"); }} style={itemStyle}>
+          <button onClick={doSignOut} style={itemStyle}>
             <span style={{fontSize:"16px"}}>🚪</span>
             <p style={{color:"rgba(255,255,255,0.65)",fontSize:"13px",fontWeight:700,margin:0}}>Sign Out</p>
           </button>
