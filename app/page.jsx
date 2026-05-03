@@ -2839,7 +2839,7 @@ function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUp
   const battleDt    = new Date(battle.battleAt);
   const isOwn       = battle.userId === currentUser.id;
   const isCancelled = battle.status === "cancelled";
-  const ss          = signups.filter(sg => sg.battleId === battle.id);
+  const ss          = signups.filter(sg => sg.occurrenceId === battle.id || sg.battleId === battle.id);
   const totalGift   = ss.reduce((s, sg) => s + (sg.plannedGiftAmount || 0), 0);
   const mySignup    = ss.find(sg =>
     sg.displayName?.toLowerCase() === currentUser.username.toLowerCase() ||
@@ -2988,7 +2988,7 @@ function BattlesView({ battles, signups, currentUser, communities, activeCommuni
           {communityBattles.map(battle => (
             <BattleCard
               key={battle.id}
-              battle={{...battle, signups: signups.filter(sg => sg.battleId === battle.id)}}
+              battle={{...battle, signups: signups.filter(sg => sg.occurrenceId === battle.id || sg.battleId === battle.id)}}
               onView={(id) => setActiveBattleId(id)}
               currentUserId={currentUser.id}
             />
@@ -3327,6 +3327,7 @@ async function loadUserFromSupabase(authUser) {
           setSignups(loadedSignups.map(sg => ({
             id:                sg.id,
             occurrenceId:      sg.occurrence_id,
+            battleId:          sg.schedule_id ? null : sg.occurrence_id, // if no schedule_id, it's a battle signup
             scheduleId:        sg.schedule_id,
             displayName:       sg.display_name,
             supporterUsername: sg.supporter_username || "",
@@ -3873,6 +3874,7 @@ async function handleLogout() {
     const mapped = {
       id:                saved.id,
       occurrenceId:      saved.occurrence_id,
+      battleId:          data.battleId || null,
       scheduleId:        saved.schedule_id,
       displayName:       saved.display_name,
       supporterUsername: saved.supporter_username || "",
