@@ -3400,7 +3400,8 @@ async function handleLogin({ email, password }) {
 
 async function handleLogout() {
   await supabase.auth.signOut();
-  setCurrentUser(null);
+  // Hard reload clears all state and history — fixes sign out after Stripe redirect
+  window.location.replace("/");
   setPendingUser(null);
   setView(VIEWS.DASHBOARD);
   setActiveCommunityId(null);
@@ -3411,8 +3412,6 @@ async function handleLogout() {
   }
 
   async function handleManageSubscription() {
-    // [DB INTEGRATION — STRIPE] Redirects to Stripe Customer Portal for cancellation,
-    // payment method updates, and invoice history.
     try {
       const res = await fetch("/api/stripe/portal", {
         method: "POST",
@@ -3420,7 +3419,16 @@ async function handleLogout() {
         body: JSON.stringify({ userId: currentUser.id }),
       });
       const { url } = await res.json();
-      if (url) window.location.href = url;
+      if (url) {
+        // In PWA standalone mode, open in a new browser tab to preserve app state
+        // This prevents the PWA from losing session when Stripe redirects back
+        const isPWA = window.navigator.standalone || window.matchMedia("(display-mode: standalone)").matches;
+        if (isPWA) {
+          window.open(url, "_blank");
+        } else {
+          window.location.href = url;
+        }
+      }
     } catch (e) {
       console.error("Portal error:", e);
       alert("Could not open billing portal. Please try again.");
