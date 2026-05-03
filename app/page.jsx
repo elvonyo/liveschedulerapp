@@ -2897,7 +2897,7 @@ function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUp
           )
           : mySignup
             ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
-            : <SignupForm occurrenceId={battle.id} scheduleId={battle.id} currentUser={currentUser} onSubmit={(data) => onSignup({...data, battleId: battle.id, occurrenceId: battle.id})} />
+            : <SignupForm occurrenceId={battle.id} scheduleId={null} currentUser={currentUser} onSubmit={(data) => onSignup({...data, battleId: battle.id, occurrenceId: battle.id, scheduleId: null})} />
       )}
 
       {isCancelled && (
@@ -3859,7 +3859,7 @@ async function handleLogout() {
       .from("signups")
       .insert({
         occurrence_id:       data.occurrenceId,
-        schedule_id:         data.scheduleId,
+        schedule_id:         data.scheduleId || null,
         display_name:        data.displayName,
         supporter_username:  data.supporterUsername || null,
         planned_gift_amount: data.plannedGiftAmount ?? null,
