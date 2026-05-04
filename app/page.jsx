@@ -3156,19 +3156,28 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [view]);
 
-  // Re-sync auth when app comes back into focus (after Stripe portal in PWA)
+  // When app comes back into focus after Stripe portal, force a hard reload
+  // This resets all state cleanly and fixes sign out issues
   useEffect(() => {
-    async function handleVisibility() {
-      if (document.visibilityState === "visible" && currentUser) {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-          window.location.replace("/");
+    let hiddenAt = null;
+
+    function handleVisibility() {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === "visible" && hiddenAt) {
+        const awayMs = Date.now() - hiddenAt;
+        hiddenAt = null;
+        // If user was away for more than 2 seconds (e.g. visiting Stripe)
+        // do a hard reload to reset state cleanly
+        if (awayMs > 2000) {
+          window.location.reload();
         }
       }
     }
+
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, [currentUser?.id]);
+  }, []);
 
   // Set default active community when user logs in
   useEffect(() => {
