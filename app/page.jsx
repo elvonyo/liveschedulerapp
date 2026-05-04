@@ -1716,6 +1716,9 @@ function MemberCount({ communityId, currentUserId, canManage, onRoleChange, onRe
   useEffect(() => {
     if (!communityId) return;
     loadMembers();
+    // Retry after 2 seconds in case of slow load
+    const t = setTimeout(loadMembers, 2000);
+    return () => clearTimeout(t);
   }, [communityId]);
 
   async function loadMembers() {
@@ -1756,7 +1759,7 @@ function MemberCount({ communityId, currentUserId, canManage, onRoleChange, onRe
     <>
       <button onClick={() => setOpen(v => !v)}
         style={{background:"none",border:"none",cursor:"pointer",padding:0,color:"rgba(255,255,255,0.4)",fontSize:"13px",fontWeight:600,textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:"3px"}}>
-        {loading ? "…" : `${count} member${count !== 1 ? "s" : ""}`}
+        {count !== null ? `${count} member${count !== 1 ? "s" : ""}` : "…"}
       </button>
 
       {open && (
@@ -2927,10 +2930,17 @@ function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUp
 function BattlesView({ battles, signups, currentUser, communities, activeCommunityId, onView, onAdd, onCancel, onUncancel, onSignup, onUpdateSignup, onRemoveSignup }) {
   const [activeBattleId, setActiveBattleId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
   const myGroups = communities.filter(c => currentUser.communityIds?.includes(c.id));
 
+  // Show ALL battles from ALL communities user belongs to
   const communityBattles = battles
-    .filter(b => b.communityId === activeCommunityId)
+    .filter(b => currentUser.communityIds?.includes(b.communityId))
+    .filter(b => {
+      if (!search.trim()) return true;
+      const q = search.trim().replace(/^@/, "").toLowerCase();
+      return b.hostUsername.toLowerCase().includes(q) || b.opponentUsername.toLowerCase().includes(q);
+    })
     .sort((a, b) => new Date(a.battleAt) - new Date(b.battleAt));
 
   const activeBattle = communityBattles.find(b => b.id === activeBattleId);
@@ -2974,6 +2984,14 @@ function BattlesView({ battles, signups, currentUser, communities, activeCommuni
         </button>
       </div>
 
+      {/* Search */}
+      <div style={{position:"relative"}}>
+        <span style={{position:"absolute",left:"12px",top:"50%",transform:"translateY(-50%)",fontSize:"14px",opacity:0.35}}>🔍</span>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by @username..."
+          style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"12px",padding:"10px 36px",color:"#fff",fontSize:"14px",outline:"none",boxSizing:"border-box"}} />
+        {search && <button onClick={()=>setSearch("")} style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:"13px",cursor:"pointer"}}>✕</button>}
+      </div>
+
       {communityBattles.length === 0 ? (
         <div style={{textAlign:"center",padding:"60px 0"}}>
           <p style={{fontSize:"40px",marginBottom:"12px"}}>⚔️</p>
@@ -2985,14 +3003,23 @@ function BattlesView({ battles, signups, currentUser, communities, activeCommuni
         </div>
       ) : (
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))",gap:"12px"}}>
-          {communityBattles.map(battle => (
-            <BattleCard
-              key={battle.id}
-              battle={{...battle, signups: signups.filter(sg => sg.occurrenceId === battle.id || sg.battleId === battle.id)}}
-              onView={(id) => setActiveBattleId(id)}
-              currentUserId={currentUser.id}
-            />
-          ))}
+          {communityBattles.map(battle => {
+            const community = communities.find(c => c.id === battle.communityId);
+            return (
+              <div key={battle.id} style={{position:"relative"}}>
+                {community && myGroups.length > 1 && (
+                  <span style={{position:"absolute",top:-8,left:8,background:"rgba(30,35,64,0.95)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)",fontSize:"9px",fontWeight:700,padding:"2px 7px",borderRadius:"20px",zIndex:1}}>
+                    {community.name}
+                  </span>
+                )}
+                <BattleCard
+                  battle={{...battle, signups: signups.filter(sg => sg.occurrenceId === battle.id || sg.battleId === battle.id)}}
+                  onView={(id) => setActiveBattleId(id)}
+                  currentUserId={currentUser.id}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -3686,6 +3713,7 @@ async function handleLogout() {
 
     // Fetch schedules for the newly joined community immediately
     await fetchCommunitySchedules(community.id);
+    await loadBattles([...( currentUser.communityIds || []), community.id]);
 
     // If user has an existing schedule, ask if they want to add it to this community too
     const hasSchedule = schedules.some(s => s.userId === currentUser.id);
@@ -3743,6 +3771,9 @@ async function handleLogout() {
     // If user already has a schedule in another community, offer to share it here too
     const hasSchedule = schedules.some(s => s.userId === currentUser.id);
     if (hasSchedule) setShareScheduleFor(community);
+
+    // Load battles for new community
+    await loadBattles([...( currentUser.communityIds || []), community.id]);
   }
 
   function handleRemoveMember(communityId, userId) {
