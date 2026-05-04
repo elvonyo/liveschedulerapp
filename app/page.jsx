@@ -308,9 +308,10 @@ function LandingPage({ onGetStarted, onSignIn }) {
 
         {/* Features */}
         <div style={{...fadeUp(0.15),marginBottom:"32px"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2, 1fr)",gap:"10px"}}>
             {[
               { icon:"📅", label:"Weekly Schedule", desc:"Set your live days & times" },
+              { icon:"🔥", label:"Battle Lives", desc:"Challenge others head-to-head" },
               { icon:"🎁", label:"Gift Planning", desc:"Coordinate supporter gifts" },
               { icon:"🔴", label:"Live Alerts", desc:"See who's live right now" },
             ].map((f, i) => (
