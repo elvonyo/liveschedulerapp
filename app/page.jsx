@@ -3071,31 +3071,37 @@ export default function App() {
           });
         }
 
-        // Refresh signups — get all signups for schedules in this community
-        if (freshSchedules && freshSchedules.length > 0) {
-          const ids = freshSchedules.map(s => s.id);
-          const { data: freshSignups } = await supabase
-            .from("signups")
-            .select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at")
-            .in("schedule_id", ids);
+        // Refresh signups — both schedule and battle signups
+        const scheduleIdList = (freshSchedules || []).map(s => s.id);
+        const battleIdList   = battles.filter(b => b.communityId === communityId).map(b => b.id);
 
-          if (freshSignups) {
-            const mapped = freshSignups.map(sg => ({
-              id:                sg.id,
-              occurrenceId:      sg.occurrence_id,
-              scheduleId:        sg.schedule_id,
-              displayName:       sg.display_name,
-              supporterUsername: sg.supporter_username || "",
-              plannedGiftAmount: sg.planned_gift_amount,
-              comment:           sg.comment || "",
-              createdAt:         sg.created_at,
-            }));
-            const scheduleIdSet = new Set(ids);
-            setSignups(prev => {
-              const kept = prev.filter(sg => !scheduleIdSet.has(sg.scheduleId));
-              return [...kept, ...mapped];
-            });
-          }
+        const refreshQueries = [];
+        if (scheduleIdList.length > 0) {
+          refreshQueries.push(supabase.from("signups").select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at").in("schedule_id", scheduleIdList));
+        }
+        if (battleIdList.length > 0) {
+          refreshQueries.push(supabase.from("signups").select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at").in("occurrence_id", battleIdList));
+        }
+        if (refreshQueries.length > 0) {
+          const results  = await Promise.all(refreshQueries);
+          const allFresh = results.flatMap(r => r.data || []);
+          const unique   = [...new Map(allFresh.map(s => [s.id, s])).values()];
+          const mapped   = unique.map(sg => ({
+            id:                sg.id,
+            occurrenceId:      sg.occurrence_id,
+            battleId:          sg.schedule_id ? null : sg.occurrence_id,
+            scheduleId:        sg.schedule_id,
+            displayName:       sg.display_name,
+            supporterUsername: sg.supporter_username || "",
+            plannedGiftAmount: sg.planned_gift_amount,
+            comment:           sg.comment || "",
+            createdAt:         sg.created_at,
+          }));
+          const idSet = new Set([...scheduleIdList, ...battleIdList]);
+          setSignups(prev => {
+            const kept = prev.filter(sg => !idSet.has(sg.scheduleId) && !idSet.has(sg.occurrenceId));
+            return [...kept, ...mapped];
+          });
         }
       }
 
@@ -3315,28 +3321,37 @@ async function loadUserFromSupabase(authUser) {
 
       setSchedules(mappedSchedules);
 
-      // Load signups for all community schedules
+      // Load signups — both regular (by schedule_id) and battle (schedule_id is null, matched by occurrence_id)
       const scheduleIds = mappedSchedules.map(s => s.id);
-      if (scheduleIds.length > 0) {
-        const { data: loadedSignups } = await supabase
-          .from("signups")
-          .select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at")
-          .in("schedule_id", scheduleIds);
+      const battleIds   = (await supabase.from("battles").select("id").in("community_id", communityIds)).data?.map(b => b.id) || [];
 
-        if (loadedSignups) {
-          setSignups(loadedSignups.map(sg => ({
-            id:                sg.id,
-            occurrenceId:      sg.occurrence_id,
-            battleId:          sg.schedule_id ? null : sg.occurrence_id, // if no schedule_id, it's a battle signup
-            scheduleId:        sg.schedule_id,
-            displayName:       sg.display_name,
-            supporterUsername: sg.supporter_username || "",
-            plannedGiftAmount: sg.planned_gift_amount,
-            comment:           sg.comment || "",
-            createdAt:         sg.created_at,
-          })));
-        }
+      const signupQueries = [];
+      if (scheduleIds.length > 0) {
+        signupQueries.push(
+          supabase.from("signups").select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at").in("schedule_id", scheduleIds)
+        );
       }
+      if (battleIds.length > 0) {
+        signupQueries.push(
+          supabase.from("signups").select("id, occurrence_id, schedule_id, display_name, supporter_username, planned_gift_amount, comment, created_at").in("occurrence_id", battleIds)
+        );
+      }
+
+      const signupResults = await Promise.all(signupQueries);
+      const allSignups = signupResults.flatMap(r => r.data || []);
+      const uniqueSignups = [...new Map(allSignups.map(s => [s.id, s])).values()];
+
+      setSignups(uniqueSignups.map(sg => ({
+        id:                sg.id,
+        occurrenceId:      sg.occurrence_id,
+        battleId:          sg.schedule_id ? null : sg.occurrence_id,
+        scheduleId:        sg.schedule_id,
+        displayName:       sg.display_name,
+        supporterUsername: sg.supporter_username || "",
+        plannedGiftAmount: sg.planned_gift_amount,
+        comment:           sg.comment || "",
+        createdAt:         sg.created_at,
+      })));
     }
   }
 
