@@ -1419,9 +1419,18 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
 
     onSave(base);
 
-    // Save 2nd slot as a separate schedule entry
+    // Save 2nd slot as a brand new separate schedule entry — always INSERT never UPDATE
     if (hasSecond) {
-      onSave({ ...base, id: null, isExisting: false, daysOfWeek: [...form2.daysOfWeek].sort((a,b)=>a-b), startTime: form2.startTime, endTime: form2.endTime });
+      onSave({
+        ...base,
+        id:         null,      // force new ID from Supabase
+        isExisting: false,     // force INSERT not UPDATE
+        createdAt:  new Date().toISOString(),
+        daysOfWeek: [...form2.daysOfWeek].sort((a,b)=>a-b),
+        startTime:  form2.startTime,
+        endTime:    form2.endTime,
+        notes:      form.notes.trim(), // same notes
+      });
     }
   }
 
