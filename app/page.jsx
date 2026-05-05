@@ -1268,7 +1268,7 @@ function MyScheduleTab({ currentUser, schedules, signups, communities, onSave, o
         userId={currentUser.id}
         username={currentUser.username}
         myGroups={myGroups}
-        onSave={async (s, keepOpen) => { await onSave(s); if (!keepOpen) setEditing(false); }}
+        onSave={s => { onSave(s); setEditing(false); }}
         onCancel={() => setEditing(false)}
       />
     );
@@ -1394,52 +1394,16 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
   });
   const [error, setError] = useState("");
 
-  // 2nd time slot
-  const [hasSecond, setHasSecond] = useState(false);
-  const [form2, setForm2] = useState({
-    daysOfWeek: [],
-    startTime:  "20:00",
-    endTime:    "22:00",
-  });
-
   function ch(f, v) { setForm(p => ({...p, [f]:v})); }
   function toggleDay(i) { setForm(p => ({...p, daysOfWeek: p.daysOfWeek.includes(i)?p.daysOfWeek.filter(d=>d!==i):[...p.daysOfWeek,i]})); }
-  function toggleDay2(i) { setForm2(p => ({...p, daysOfWeek: p.daysOfWeek.includes(i)?p.daysOfWeek.filter(d=>d!==i):[...p.daysOfWeek,i]})); }
 
-  async function save() {
+  function save() {
     if (!form.platform.trim()||form.daysOfWeek.length===0||!form.startTime||!form.endTime||!form.communityId) {
       setError("Platform, community, at least one day, and times are required."); return;
     }
-    if (hasSecond && form2.daysOfWeek.length === 0) {
-      setError("Please select at least one day for the 2nd time slot, or remove it."); return;
-    }
     setError("");
-
-    const base = { ...(initial||{}), id:initial?.id||null, isExisting:!!initial?.id, userId, hostUsername:username, platform:form.platform.trim(), communityId:form.communityId, daysOfWeek:[...form.daysOfWeek].sort((a,b)=>a-b), startTime:form.startTime, endTime:form.endTime, notes:form.notes.trim(), manualStatus:initial?.manualStatus??null, createdAt:initial?.createdAt||new Date().toISOString() };
-
-    // If there's a 2nd slot, keep form open during first save, close after 2nd
-    await onSave(base, hasSecond);
-
-    // Save 2nd slot as a brand new separate schedule entry — always INSERT never UPDATE
-    if (hasSecond) {
-      await onSave({
-        ...base,
-        id:         null,
-        isExisting: false,
-        createdAt:  new Date().toISOString(),
-        daysOfWeek: [...form2.daysOfWeek].sort((a,b)=>a-b),
-        startTime:  form2.startTime,
-        endTime:    form2.endTime,
-        notes:      form.notes.trim(),
-      }, false); // false = close after this one
-    }
+    onSave({ ...(initial||{}), id:initial?.id||null, isExisting:!!initial?.id, userId, hostUsername:username, platform:form.platform.trim(), communityId:form.communityId, daysOfWeek:[...form.daysOfWeek].sort((a,b)=>a-b), startTime:form.startTime, endTime:form.endTime, notes:form.notes.trim(), manualStatus:initial?.manualStatus??null, createdAt:initial?.createdAt||new Date().toISOString() });
   }
-
-  const dayBtnStyle = (selected) => ({
-    padding:"10px 0", borderRadius:"8px", fontSize:"11px", fontWeight:700, border:"none", cursor:"pointer", textAlign:"center",
-    background: selected ? "#fbbf24" : "rgba(255,255,255,0.1)",
-    color:      selected ? "#1c1400" : "rgba(255,255,255,0.6)",
-  });
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:"14px",paddingBottom:"16px"}}>
@@ -1448,8 +1412,6 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
         <button onClick={onCancel} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"14px",cursor:"pointer"}}>Cancel</button>
       </div>
       {error && <p style={{color:"#f87171",fontSize:"12px",background:"rgba(239,68,68,0.1)",borderRadius:"10px",padding:"8px 12px",margin:0}}>{error}</p>}
-
-      {/* Slot 1 */}
       <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px"}}>
         <p style={{color:"rgba(255,255,255,0.5)",fontSize:"12px",margin:0}}>Your username <span style={{color:"#fbbf24",fontWeight:700}}>@{username}</span> is shown as host automatically.</p>
         {myGroups.length > 0 && (
@@ -1470,7 +1432,10 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
           <label style={{...IS.label,marginBottom:"10px"}}>Days of Week * <span style={{color:"rgba(255,255,255,0.3)",fontWeight:400}}>(tap to select)</span></label>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"4px"}}>
             {DAYS.map((day,i) => (
-              <button key={i} type="button" onClick={() => toggleDay(i)} style={dayBtnStyle(form.daysOfWeek.includes(i))}>
+              <button key={i} type="button" onClick={() => toggleDay(i)}
+                style={{padding:"10px 0",borderRadius:"8px",fontSize:"11px",fontWeight:700,border:"none",cursor:"pointer",textAlign:"center",
+                  background:form.daysOfWeek.includes(i)?"#fbbf24":"rgba(255,255,255,0.1)",
+                  color:form.daysOfWeek.includes(i)?"#1c1400":"rgba(255,255,255,0.6)"}}>
                 {day.slice(0,2)}
               </button>
             ))}
@@ -1483,34 +1448,6 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
           <textarea value={form.notes} onChange={e=>ch("notes",e.target.value)} placeholder="What's the vibe every week?" rows={2} style={{...IS.input,resize:"none"}} />
         </div>
       </div>
-
-      {/* 2nd time slot toggle */}
-      {!hasSecond ? (
-        <button onClick={() => setHasSecond(true)}
-          style={{background:"rgba(255,255,255,0.07)",border:"1px dashed rgba(255,255,255,0.2)",borderRadius:"14px",padding:"12px",color:"rgba(255,255,255,0.5)",fontSize:"13px",fontWeight:700,cursor:"pointer",width:"100%"}}>
-          ➕ Do you go live a 2nd time? Add another time slot
-        </button>
-      ) : (
-        <div style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"20px",padding:"20px",display:"flex",flexDirection:"column",gap:"14px",border:"1px solid rgba(251,191,36,0.2)"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <p style={{color:"#fbbf24",fontWeight:700,fontSize:"14px",margin:0}}>⏰ 2nd Time Slot</p>
-            <button onClick={() => setHasSecond(false)} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:"12px",cursor:"pointer"}}>✕ Remove</button>
-          </div>
-          <div>
-            <label style={{...IS.label,marginBottom:"10px"}}>Days of Week * <span style={{color:"rgba(255,255,255,0.3)",fontWeight:400}}>(tap to select)</span></label>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"4px"}}>
-              {DAYS.map((day,i) => (
-                <button key={i} type="button" onClick={() => toggleDay2(i)} style={dayBtnStyle(form2.daysOfWeek.includes(i))}>
-                  {day.slice(0,2)}
-                </button>
-              ))}
-            </div>
-          </div>
-          <TimeInput label="Start Time *" value={form2.startTime} onChange={v=>setForm2(p=>({...p,startTime:v}))} />
-          <TimeInput label="End Time *"   value={form2.endTime}   onChange={v=>setForm2(p=>({...p,endTime:v}))} />
-        </div>
-      )}
-
       <button onClick={save} style={IS.btn}>
         {initial?"Save Changes":"Save My Schedule 🎬"}
       </button>
