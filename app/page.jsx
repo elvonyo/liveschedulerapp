@@ -3871,8 +3871,6 @@ async function handleLogout() {
   // ── Schedules ──
   async function handleSaveSchedule(s) {
     const payload = {
-      user_id:       s.userId,
-      community_id:  s.communityId,
       host_username: s.hostUsername,
       platform:      s.platform,
       days_of_week:  s.daysOfWeek || [],
@@ -3882,47 +3880,53 @@ async function handleLogout() {
       manual_status: s.manualStatus || null,
     };
 
-    let savedSchedule;
-
     if (s.isExisting) {
-      // Editing existing schedule — update by ID directly
-      const { data, error } = await supabase
-        .from("schedules")
-        .update(payload)
-        .eq("id", s.id)
-        .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
-        .maybeSingle();
+      // Editing — update ALL of this user's schedules across ALL communities
+      const myScheduleIds = schedules
+        .filter(x => x.userId === s.userId)
+        .map(x => x.id);
 
-      if (error) { alert("Save failed: " + error.message); return; }
-      savedSchedule = data;
+      if (myScheduleIds.length > 0) {
+        const { error } = await supabase
+          .from("schedules")
+          .update(payload)
+          .in("id", myScheduleIds);
+
+        if (error) { alert("Save failed: " + error.message); return; }
+
+        // Update all in local state
+        setSchedules(p => p.map(x =>
+          x.userId === s.userId
+            ? { ...x, ...payload, platform: s.platform, daysOfWeek: s.daysOfWeek, startTime: s.startTime, endTime: s.endTime, notes: s.notes }
+            : x
+        ));
+      }
     } else {
-      // New schedule — insert (let Supabase generate the UUID)
+      // New schedule — insert for the selected community
       const { data, error } = await supabase
         .from("schedules")
-        .insert(payload)
+        .insert({ ...payload, user_id: s.userId, community_id: s.communityId })
         .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
         .maybeSingle();
 
       if (error) { alert("Save failed: " + error.message); return; }
-      savedSchedule = data;
+      if (!data) return;
+
+      const mappedSchedule = {
+        id:           data.id,
+        userId:       data.user_id,
+        communityId:  data.community_id,
+        hostUsername: data.host_username,
+        platform:     data.platform,
+        daysOfWeek:   (data.days_of_week || []).map(Number),
+        startTime:    data.start_time ? String(data.start_time).slice(0, 5) : "12:00",
+        endTime:      data.end_time   ? String(data.end_time).slice(0, 5)   : "13:00",
+        notes:        data.notes || "",
+        manualStatus: data.manual_status,
+        createdAt:    data.created_at,
+      };
+      setSchedules(p => [mappedSchedule, ...p]);
     }
-
-    const mappedSchedule = {
-      id: savedSchedule.id,
-      userId: savedSchedule.user_id,
-      communityId: savedSchedule.community_id,
-      hostUsername: savedSchedule.host_username,
-      platform: savedSchedule.platform,
-      daysOfWeek: (savedSchedule.days_of_week || []).map(Number),
-      startTime: savedSchedule.start_time ? String(savedSchedule.start_time).slice(0, 5) : "12:00",
-      endTime: savedSchedule.end_time ? String(savedSchedule.end_time).slice(0, 5) : "13:00",
-      notes: savedSchedule.notes || "",
-      manualStatus: savedSchedule.manual_status,
-      createdAt: savedSchedule.created_at,
-      updatedAt: savedSchedule.updated_at,
-    };
-
-    setSchedules(p=>p.find(x=>x.id===mappedSchedule.id)?p.map(x=>x.id===mappedSchedule.id?mappedSchedule:x):[mappedSchedule,...p]);
   }
 
   async function handleGoLive(id) {
