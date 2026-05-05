@@ -297,7 +297,7 @@ function LandingPage({ onGetStarted, onSignIn }) {
           <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"40px"}}>
             <button onClick={onGetStarted}
               style={{width:"100%",background:"#fbbf24",color:"#1c1400",fontWeight:900,fontSize:"16px",border:"none",borderRadius:"16px",padding:"16px",cursor:"pointer",boxShadow:"0 4px 20px rgba(251,191,36,0.3)",letterSpacing:"0.3px"}}>
-              Get Started — $4.99/mo
+              Start Free — 7 Days on Us
             </button>
             <button onClick={onSignIn}
               style={{width:"100%",background:"rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.7)",fontWeight:700,fontSize:"15px",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"16px",padding:"14px",cursor:"pointer"}}>
@@ -2098,7 +2098,10 @@ function PaywallScreen({ currentUser, onPaymentSuccess, onLogout }) {
               <span style={{color:"#fff",fontWeight:900,fontSize:"56px",lineHeight:1}}>4.99</span>
               <span style={{color:"rgba(255,255,255,0.5)",fontSize:"14px",alignSelf:"flex-end",marginBottom:"6px"}}>/mo</span>
             </div>
-            <p style={{color:"rgba(255,255,255,0.5)",fontSize:"13px",margin:"6px 0 0"}}>Cancel anytime</p>
+            <div style={{background:"rgba(52,211,153,0.15)",border:"1px solid rgba(52,211,153,0.3)",borderRadius:"20px",padding:"5px 14px",margin:"8px auto 0",display:"inline-block"}}>
+              <p style={{color:"#6ee7b7",fontSize:"12px",fontWeight:700,margin:0}}>✨ 7 days free — no charge today</p>
+            </div>
+            <p style={{color:"rgba(255,255,255,0.4)",fontSize:"11px",margin:"6px 0 0"}}>Then $4.99/mo · Cancel anytime</p>
           </div>
           <div style={{padding:"16px 24px",display:"flex",flexDirection:"column",gap:"12px"}}>
             {["View all community live schedules","Sign up to support your favorite hosts","Get notified when hosts go live","Track planned gift amounts","Join multiple communities","Post your own weekly schedule"].map((f,i) => (
@@ -2117,7 +2120,7 @@ function PaywallScreen({ currentUser, onPaymentSuccess, onLogout }) {
                   <span style={{width:18,height:18,border:"2.5px solid #92400e",borderTopColor:"transparent",borderRadius:"50%",display:"inline-block",animation:"spin 0.7s linear infinite"}} />
                   Processing…
                 </>
-              ) : <>🔓 Subscribe for $4.99/mo</>}
+              ) : <>🔓 Start Free Trial — $4.99/mo after</>}
             </button>
             <p style={{color:"rgba(255,255,255,0.25)",fontSize:"11px",textAlign:"center",margin:"10px 0 0"}}>Secured by Stripe · Cancel anytime in settings</p>
           </div>
