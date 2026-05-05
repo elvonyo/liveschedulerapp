@@ -1268,7 +1268,7 @@ function MyScheduleTab({ currentUser, schedules, signups, communities, onSave, o
         userId={currentUser.id}
         username={currentUser.username}
         myGroups={myGroups}
-        onSave={s => { onSave(s); setEditing(false); }}
+        onSave={async (s, keepOpen) => { await onSave(s); if (!keepOpen) setEditing(false); }}
         onCancel={() => setEditing(false)}
       />
     );
@@ -1406,7 +1406,7 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
   function toggleDay(i) { setForm(p => ({...p, daysOfWeek: p.daysOfWeek.includes(i)?p.daysOfWeek.filter(d=>d!==i):[...p.daysOfWeek,i]})); }
   function toggleDay2(i) { setForm2(p => ({...p, daysOfWeek: p.daysOfWeek.includes(i)?p.daysOfWeek.filter(d=>d!==i):[...p.daysOfWeek,i]})); }
 
-  function save() {
+  async function save() {
     if (!form.platform.trim()||form.daysOfWeek.length===0||!form.startTime||!form.endTime||!form.communityId) {
       setError("Platform, community, at least one day, and times are required."); return;
     }
@@ -1417,20 +1417,21 @@ function ScheduleForm({ initial, userId, username, myGroups, onSave, onCancel })
 
     const base = { ...(initial||{}), id:initial?.id||null, isExisting:!!initial?.id, userId, hostUsername:username, platform:form.platform.trim(), communityId:form.communityId, daysOfWeek:[...form.daysOfWeek].sort((a,b)=>a-b), startTime:form.startTime, endTime:form.endTime, notes:form.notes.trim(), manualStatus:initial?.manualStatus??null, createdAt:initial?.createdAt||new Date().toISOString() };
 
-    onSave(base);
+    // If there's a 2nd slot, keep form open during first save, close after 2nd
+    await onSave(base, hasSecond);
 
     // Save 2nd slot as a brand new separate schedule entry — always INSERT never UPDATE
     if (hasSecond) {
-      onSave({
+      await onSave({
         ...base,
-        id:         null,      // force new ID from Supabase
-        isExisting: false,     // force INSERT not UPDATE
+        id:         null,
+        isExisting: false,
         createdAt:  new Date().toISOString(),
         daysOfWeek: [...form2.daysOfWeek].sort((a,b)=>a-b),
         startTime:  form2.startTime,
         endTime:    form2.endTime,
-        notes:      form.notes.trim(), // same notes
-      });
+        notes:      form.notes.trim(),
+      }, false); // false = close after this one
     }
   }
 
