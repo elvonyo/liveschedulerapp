@@ -1840,6 +1840,12 @@ function DashboardView({ schedules, signups, battles, currentUser, communities, 
   const [search, setSearch] = useState("");
 
   const myGroups = communities.filter(c => currentUser.communityIds?.includes(c.id));
+
+  // Check if user is admin/mod of the battle's community
+  function isBattleAdmin(battle) {
+    const community = communities.find(c => c.id === battle.communityId);
+    return isLeaderOrMod && community?.id === battle.communityId;
+  }
   const activeCommunity = communities.find(c=>c.id===activeCommunityId);
 
   const communitySchedules = useMemo(() => {
@@ -2839,9 +2845,10 @@ function BattleForm({ communityId, userId, username, myGroups, onSave, onCancel,
   );
 }
 
-function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUpdateSignup, onRemoveSignup, onCancel, onUncancel }) {
+function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUpdateSignup, onRemoveSignup, onCancel, onUncancel, onDelete, isAdmin }) {
   const battleDt    = new Date(battle.battleAt);
   const isOwn       = battle.userId === currentUser.id;
+  const canManage   = isOwn || isAdmin; // owner or community admin/mod
   const isCancelled = battle.status === "cancelled";
   const ss          = signups.filter(sg => sg.occurrenceId === battle.id || sg.battleId === battle.id);
   const totalGift   = ss.reduce((s, sg) => s + (sg.plannedGiftAmount || 0), 0);
@@ -2899,20 +2906,45 @@ function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUp
               </div>
             </div>
           )
-          : mySignup
-            ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
-            : <SignupForm occurrenceId={battle.id} scheduleId={null} currentUser={currentUser} onSubmit={(data) => onSignup({...data, battleId: battle.id, occurrenceId: battle.id, scheduleId: null})} />
+          : (
+            <>
+              {mySignup
+                ? <MySignupPanel signup={mySignup} onUpdate={onUpdateSignup} onRemove={onRemoveSignup} />
+                : <SignupForm occurrenceId={battle.id} scheduleId={null} currentUser={currentUser} onSubmit={(data) => onSignup({...data, battleId: battle.id, occurrenceId: battle.id, scheduleId: null})} />
+              }
+              {isAdmin && (
+                <div style={{display:"flex",gap:"8px",justifyContent:"center",marginTop:"4px"}}>
+                  <button onClick={() => onCancel(battle.id)}
+                    style={{background:"rgba(239,68,68,0.12)",color:"#f87171",fontSize:"11px",fontWeight:700,border:"none",borderRadius:"10px",padding:"7px 12px",cursor:"pointer"}}>
+                    ⛔ Cancel Battle
+                  </button>
+                  <button onClick={() => { if(window.confirm("Permanently delete this battle?")) onDelete(battle.id); }}
+                    style={{background:"rgba(239,68,68,0.12)",color:"#f87171",fontSize:"11px",fontWeight:700,border:"none",borderRadius:"10px",padding:"7px 12px",cursor:"pointer"}}>
+                    🗑️ Delete Battle
+                  </button>
+                </div>
+              )}
+            </>
+          )
       )}
 
       {isCancelled && (
         <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:"16px",padding:"16px",textAlign:"center"}}>
           <p style={{color:"#f87171",fontWeight:900,fontSize:"14px",margin:"0 0 10px"}}>❌ This battle has been cancelled</p>
-          {isOwn && (
-            <button onClick={() => onUncancel(battle.id)}
-              style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 16px",cursor:"pointer"}}>
-              ↩️ Uncancel Battle
-            </button>
-          )}
+          <div style={{display:"flex",gap:"8px",justifyContent:"center",flexWrap:"wrap"}}>
+            {canManage && (
+              <button onClick={() => onUncancel(battle.id)}
+                style={{background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 16px",cursor:"pointer"}}>
+                ↩️ Uncancel Battle
+              </button>
+            )}
+            {isAdmin && (
+              <button onClick={() => { if(window.confirm("Permanently delete this battle?")) onDelete(battle.id); }}
+                style={{background:"rgba(239,68,68,0.18)",color:"#f87171",fontSize:"12px",fontWeight:700,border:"none",borderRadius:"10px",padding:"8px 16px",cursor:"pointer"}}>
+                🗑️ Delete Battle
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -2928,7 +2960,7 @@ function BattleDetailView({ battle, currentUser, signups, onBack, onSignup, onUp
   );
 }
 
-function BattlesView({ battles, signups, currentUser, communities, activeCommunityId, onView, onAdd, onCancel, onUncancel, onSignup, onUpdateSignup, onRemoveSignup }) {
+function BattlesView({ battles, signups, currentUser, communities, activeCommunityId, onView, onAdd, onCancel, onUncancel, onDelete, onSignup, onUpdateSignup, onRemoveSignup, isLeaderOrMod }) {
   const [activeBattleId, setActiveBattleId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
@@ -2956,8 +2988,10 @@ function BattlesView({ battles, signups, currentUser, communities, activeCommuni
         onSignup={onSignup}
         onUpdateSignup={onUpdateSignup}
         onRemoveSignup={onRemoveSignup}
-        onCancel={(id) => { onCancel(id); setActiveBattleId(null); }}
+        onCancel={(id) => { onCancel(id); }}
         onUncancel={onUncancel}
+        onDelete={(id) => { onDelete(id); setActiveBattleId(null); }}
+        isAdmin={isBattleAdmin(activeBattle)}
       />
     );
   }
@@ -4022,6 +4056,16 @@ async function handleLogout() {
     setBattles(p => p.map(b => b.id === battleId ? { ...b, status: "scheduled" } : b));
   }
 
+  async function handleDeleteBattle(battleId) {
+    // Delete all signups for this battle first
+    await supabase.from("signups").delete().eq("occurrence_id", battleId);
+    // Then delete the battle
+    const { error } = await supabase.from("battles").delete().eq("id", battleId);
+    if (error) { alert("Delete failed: " + error.message); return; }
+    setBattles(p => p.filter(b => b.id !== battleId));
+    setSignups(p => p.filter(sg => sg.occurrenceId !== battleId));
+  }
+
   async function loadBattles(communityIds) {
     if (!communityIds?.length) return;
     const { data, error } = await supabase
@@ -4235,9 +4279,11 @@ if (!currentUser && !pendingUser) return (
               onAdd={handleAddBattle}
               onCancel={handleCancelBattle}
               onUncancel={handleUncancelBattle}
+              onDelete={handleDeleteBattle}
               onSignup={handleSignup}
               onUpdateSignup={handleUpdateSignup}
               onRemoveSignup={handleRemoveSignup}
+              isLeaderOrMod={isLeaderOrMod}
             />
           )}
 
