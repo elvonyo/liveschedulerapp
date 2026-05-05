@@ -61,7 +61,10 @@ export async function POST(req: NextRequest) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/`,
       metadata: { supabase_user_id: userId },
-      subscription_data: { metadata: { supabase_user_id: userId } },
+      subscription_data: {
+        trial_period_days: 7,
+        metadata: { supabase_user_id: userId },
+      },
     });
 
     return NextResponse.json({ url: session.url });
