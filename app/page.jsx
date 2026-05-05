@@ -3882,10 +3882,11 @@ async function handleLogout() {
 
     if (s.isExisting) {
       // Editing — update ALL of this user's schedules across ALL communities
-      const myScheduleIds = schedules
-        .filter(x => x.userId === s.userId)
-        .map(x => x.id);
+      const mySchedules   = schedules.filter(x => x.userId === s.userId);
+      const myScheduleIds = mySchedules.map(x => x.id);
+      const communityIdsWithSchedule = new Set(mySchedules.map(x => x.communityId));
 
+      // 1. Update existing rows
       if (myScheduleIds.length > 0) {
         const { error } = await supabase
           .from("schedules")
@@ -3893,14 +3894,43 @@ async function handleLogout() {
           .in("id", myScheduleIds);
 
         if (error) { alert("Save failed: " + error.message); return; }
-
-        // Update all in local state
-        setSchedules(p => p.map(x =>
-          x.userId === s.userId
-            ? { ...x, ...payload, platform: s.platform, daysOfWeek: s.daysOfWeek, startTime: s.startTime, endTime: s.endTime, notes: s.notes }
-            : x
-        ));
       }
+
+      // 2. Insert into communities where user has no schedule yet
+      const missingCommunities = (currentUser.communityIds || [])
+        .filter(cid => !communityIdsWithSchedule.has(cid));
+
+      for (const cid of missingCommunities) {
+        const { data: newRow } = await supabase
+          .from("schedules")
+          .insert({ ...payload, user_id: s.userId, community_id: cid })
+          .select("id, user_id, community_id, host_username, platform, days_of_week, start_time, end_time, notes, manual_status, created_at")
+          .maybeSingle();
+
+        if (newRow) {
+          const mapped = {
+            id:           newRow.id,
+            userId:       newRow.user_id,
+            communityId:  newRow.community_id,
+            hostUsername: newRow.host_username,
+            platform:     newRow.platform,
+            daysOfWeek:   (newRow.days_of_week || []).map(Number),
+            startTime:    newRow.start_time ? String(newRow.start_time).slice(0,5) : "12:00",
+            endTime:      newRow.end_time   ? String(newRow.end_time).slice(0,5)   : "13:00",
+            notes:        newRow.notes || "",
+            manualStatus: newRow.manual_status,
+            createdAt:    newRow.created_at,
+          };
+          setSchedules(p => [mapped, ...p]);
+        }
+      }
+
+      // Update all existing in local state
+      setSchedules(p => p.map(x =>
+        x.userId === s.userId
+          ? { ...x, platform: s.platform, daysOfWeek: s.daysOfWeek, startTime: s.startTime, endTime: s.endTime, notes: s.notes }
+          : x
+      ));
     } else {
       // New schedule — insert for the selected community
       const { data, error } = await supabase
