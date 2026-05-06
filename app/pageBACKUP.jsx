@@ -3094,76 +3094,9 @@ function BattlesView({ battles, signups, currentUser, communities, activeCommuni
   );
 }
 
-// ─── Privacy Policy View ──────────────────────────────────────────────────────
-function PrivacyView({ onClose }) {
-  return (
-    <div style={{display:"flex",flexDirection:"column",gap:"16px",paddingBottom:"24px"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <h1 style={{color:"#fff",fontWeight:900,fontSize:"20px",margin:0}}>Privacy Policy</h1>
-        <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:"14px",cursor:"pointer",fontWeight:700}}>✕ Close</button>
-      </div>
-
-      <p style={{color:"rgba(255,255,255,0.4)",fontSize:"12px",margin:0}}>Last updated: May 2026 · Elevate Influence LLC</p>
-
-      {[
-        {
-          title: "1. Introduction",
-          body: "Welcome to LiveSupport Scheduler, a product of Elevate Influence LLC ("we," "our," or "us"). This Privacy Policy explains how we collect, use, and protect your information when you use our app at livescheduler.us. By using the app, you agree to this policy.",
-        },
-        {
-          title: "2. Information We Collect",
-          body: "We collect information you provide directly: your email address, username, and password when you create an account. We also collect payment information processed securely through Stripe — we do not store your full card details. When you use the app, we collect schedules, community memberships, supporter signups, and planned gift amounts you enter.",
-        },
-        {
-          title: "3. How We Use Your Information",
-          body: "We use your information to provide and improve the LiveSupport Scheduler service, process your subscription payments, send confirmation and account emails, and display your schedule to members of communities you belong to. We do not sell your personal information to third parties.",
-        },
-        {
-          title: "4. Gift Amounts & Payments",
-          body: "Planned gift amounts entered in the app are for coordination purposes only. No payments are processed within the app itself. All actual gifting happens on the streaming platform. Your subscription payment of $4.99/month is processed by Stripe.",
-        },
-        {
-          title: "5. Data Sharing",
-          body: "Your schedule and username are visible to members of communities you join. Your email address is never shared with other users. We use Supabase for database storage, Stripe for payment processing, and Resend for transactional email — each with their own privacy protections.",
-        },
-        {
-          title: "6. Data Retention",
-          body: "We retain your account data for as long as your account is active. If you cancel your subscription, your account and data remain accessible. To request deletion of your data, email us at info@elevateinfluence.us.",
-        },
-        {
-          title: "7. Security",
-          body: "We use industry-standard security measures including encrypted connections (HTTPS), secure authentication via Supabase, and tokenized payment processing via Stripe. No method of transmission over the internet is 100% secure.",
-        },
-        {
-          title: "8. Children's Privacy",
-          body: "LiveSupport Scheduler is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.",
-        },
-        {
-          title: "9. Changes to This Policy",
-          body: "We may update this Privacy Policy from time to time. We will notify you of significant changes by posting the new policy in the app. Continued use of the app after changes constitutes acceptance.",
-        },
-        {
-          title: "10. Contact Us",
-          body: "If you have any questions about this Privacy Policy, please contact us at info@elevateinfluence.us or visit elevateinfluence.us.",
-        },
-      ].map((section, i) => (
-        <div key={i} style={{background:"linear-gradient(145deg,#1e2340,#16192e)",borderRadius:"14px",padding:"16px"}}>
-          <p style={{color:"#fbbf24",fontWeight:700,fontSize:"13px",margin:"0 0 8px"}}>{section.title}</p>
-          <p style={{color:"rgba(255,255,255,0.6)",fontSize:"13px",margin:0,lineHeight:1.6}}>{section.body}</p>
-        </div>
-      ))}
-
-      <div style={{textAlign:"center",paddingTop:"8px"}}>
-        <p style={{color:"rgba(255,255,255,0.2)",fontSize:"11px",margin:"0 0 4px"}}>© 2026 Elevate Influence LLC. All rights reserved.</p>
-        <a href="https://elevateinfluence.us" target="_blank" rel="noopener noreferrer" style={{color:"rgba(255,255,255,0.3)",fontSize:"11px"}}>elevateinfluence.us</a>
-      </div>
-    </div>
-  );
-}
-
 // ─── App Root ──────────────────────────────────────────────────────────────────
 
-const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help", ALL_LIVE:"all_live", BATTLES:"battles", PRIVACY:"privacy" };
+const VIEWS = { DASHBOARD:"dashboard", DETAIL:"detail", MY:"my", ADMIN:"admin", HELP:"help", ALL_LIVE:"all_live", BATTLES:"battles" };
 
 export default function App() {
   // [DB INTEGRATION] Replace all useState with useEffect + API/Supabase fetches on mount.
@@ -4475,10 +4408,6 @@ if (!currentUser && !pendingUser) return (
             <HelpView onClose={() => setView(VIEWS.DASHBOARD)} />
           )}
 
-          {view===VIEWS.PRIVACY&&(
-            <PrivacyView onClose={() => setView(VIEWS.DASHBOARD)} />
-          )}
-
           {view===VIEWS.ADMIN&&(myLeaderCommunities.length>0||isLeaderOrMod)&&(
             <div style={{display:"flex",flexDirection:"column",gap:"24px"}}>
               {[...myLeaderCommunities, ...(isLeaderOrMod && activeCommunity && !myLeaderCommunities.find(c=>c.id===activeCommunity.id) ? [activeCommunity] : [])].map(community => (
@@ -4508,11 +4437,7 @@ if (!currentUser && !pendingUser) return (
               </button>
             ))}
           </div>
-          <p style={{textAlign:"center",color:"rgba(255,255,255,0.15)",fontSize:"10px",padding:"2px 16px 4px",margin:0}}>⚠️ No payments processed — gift amounts are for planning only</p>
-          <p style={{textAlign:"center",fontSize:"10px",color:"rgba(255,255,255,0.12)",padding:"2px 16px 8px",margin:0}}>
-            © 2026 Elevate Influence LLC. All rights reserved. ·{" "}
-            <button onClick={()=>setView(VIEWS.PRIVACY)} style={{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:"10px",cursor:"pointer",padding:0,textDecoration:"underline"}}>Privacy Policy</button>
-          </p>
+          <p style={{textAlign:"center",color:"rgba(255,255,255,0.15)",fontSize:"10px",padding:"2px 16px 8px",margin:0}}>⚠️ No payments processed — gift amounts are for planning only</p>
         </nav>
       </div>
     </>
