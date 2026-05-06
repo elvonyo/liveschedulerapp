@@ -3108,7 +3108,7 @@ function PrivacyView({ onClose }) {
       {[
         {
           title: "1. Introduction",
-          body: "Welcome to LiveSupport Scheduler, a product of Elevate Influence LLC ("we," "our," or "us"). This Privacy Policy explains how we collect, use, and protect your information when you use our app at livescheduler.us. By using the app, you agree to this policy.",
+          body: "Welcome to LiveSupport Scheduler, a product of Elevate Influence LLC (\u201cwe,\u201d \u201cour,\u201d or \u201cus\u201d). This Privacy Policy explains how we collect, use, and protect your information when you use our app at livescheduler.us. By using the app, you agree to this policy.",
         },
         {
           title: "2. Information We Collect",
